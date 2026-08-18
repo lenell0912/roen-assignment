@@ -12,11 +12,17 @@ export default function PRD() {
       <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14">
         <Problem />
         <Target />
+        <Scenario />
+        <Goals />
         <Solution />
+        <MvpScope />
         <Novelty />
         <Hypotheses />
         <Differentiation />
+        <StrategicFit />
+        <Risks />
         <Roadmap />
+        <OpenQuestions />
         <AiUsage />
         <FooterCTA />
       </div>
@@ -27,10 +33,12 @@ export default function PRD() {
 function TopBar() {
   const nav = [
     ['문제', 'problem'],
-    ['타겟', 'target'],
+    ['시나리오', 'scenario'],
     ['해결', 'solution'],
+    ['스코프', 'scope'],
     ['새로움', 'novelty'],
-    ['가설·지표', 'hypo'],
+    ['지표', 'hypo'],
+    ['리스크', 'risk'],
     ['로드맵', 'roadmap'],
   ]
   return (
@@ -341,6 +349,161 @@ function AiUsage() {
           <li>
             <b>구현</b>: Next.js로 스캐폴드→실데이터 연동→에이전트→미니앱 페이지까지 AI 페어로 개발, TDD로 코어 검증.
           </li>
+        </ul>
+      </Card>
+    </section>
+  )
+}
+
+function Scenario() {
+  const steps = [
+    ['① 프레임 형성', '대화로 "난 왜 사고, 언제 파나"를 끌어냄 → 규칙 3개 저장. 답은 안 주고 되물음.'],
+    ['② 결정 순간', '삼성전자 사려는데, 결정 페이지가 "2차전지 이미 62% — 쏠림" 위반을 짚음. 지훈은 보류.'],
+    ['③ 기록', '"오늘은 감정이었다"를 근거로 남김. 나중에 운/실력을 가릴 씨앗.'],
+    ['④ 회고·진화', '한 달 뒤, "고점회피 규칙이 오히려 −13%p 손해"를 데이터로 확인 → 규칙을 완화.'],
+  ]
+  return (
+    <section className="space-y-4">
+      <H2 id="scenario" kicker="User Scenario · 핵심 사용자 시나리오" title="지훈, 25세 — 에코프로에 물린 직장인" />
+      <Card className="bg-red-50 border-red-100">
+        <div className="text-sm text-red-700">
+          <b>Before.</b> 유튜브 보고 고점에 샀는데 왜 샀는지 설명 못 함. 커뮤니티 보며 불안, 손절·물타기 반복. 다음에도 똑같이.
+        </div>
+      </Card>
+      <div className="space-y-2">
+        {steps.map(([t, d]) => (
+          <Card key={t}>
+            <div className="font-bold text-sm">{t}</div>
+            <div className="mt-1 text-sm text-gray-600">{d}</div>
+          </Card>
+        ))}
+      </div>
+      <Card className="bg-emerald-50 border-emerald-100">
+        <div className="text-sm text-emerald-800">
+          <b>After.</b> 남 따라가 아니라 <b>자기 기준</b>으로 결정하고, 그 판단이 데이터로 쌓여 <b>점점 나아진다.</b>
+        </div>
+      </Card>
+    </section>
+  )
+}
+
+function Goals() {
+  return (
+    <section className="space-y-4">
+      <H2 kicker="Goals & Non-goals · 목표와 비목표" title="무엇을 하고, 무엇을 안 하나" />
+      <div className="grid md:grid-cols-2 gap-3">
+        <Card className="border-emerald-200">
+          <div className="font-bold text-emerald-700">목표 (Goals)</div>
+          <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
+            <li>사용자가 자기만의 거래 프레임을 갖게 한다</li>
+            <li>결정 순간 근거 있는 판단을 늘린다(뇌동·추격 차단)</li>
+            <li>판단을 기록·되먹여 판단력이 자라게 한다</li>
+          </ul>
+        </Card>
+        <Card className="border-red-200">
+          <div className="font-bold text-red-600">비목표 (Non-goals · 의도된 절제)</div>
+          <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
+            <li>종목 추천·"사라/팔아라" 답을 주지 않는다</li>
+            <li>자동매매·자동주문을 하지 않는다(human-in-the-loop)</li>
+            <li>수익률을 보장·예측하지 않는다</li>
+            <li>사용자의 판단을 대체하지 않는다</li>
+          </ul>
+        </Card>
+      </div>
+    </section>
+  )
+}
+
+function MvpScope() {
+  const groups: [string, string, string[]][] = [
+    ['✅ 지금 실제 동작', '#22a06b', ['코파일럿 대화(Sonnet)', '프레임 형성·편집', '결정 대조(실데이터)', '회고 백테스트', '프레임 진화(엣지·제안·적용)', '토스/Yahoo 실연동', '판단 기록']],
+    ['🟡 목업/라이트', '#f0a020', ['커뮤니티 다리', '유튜브 온램프', '스크린샷 배경', '카카오톡 채널']],
+    ['🔮 로드맵', '#8f7ee7', ['정식 백테스트', '모의 자동주문', '멀티에이전트', '카톡 실연동']],
+  ]
+  return (
+    <section className="space-y-4">
+      <H2 id="scope" kicker="Scope · MVP 범위" title="지금 만든 것 vs 목업 vs 로드맵" />
+      <div className="grid md:grid-cols-3 gap-3">
+        {groups.map(([t, c, items]) => (
+          <Card key={t}>
+            <div className="font-bold" style={{ color: c }}>
+              {t}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {items.map((it) => (
+                <span key={it} className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
+                  {it}
+                </span>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function StrategicFit() {
+  return (
+    <section className="space-y-4">
+      <H2 kicker="Strategic Fit · 전략적 적합성" title="왜 카카오페이증권이 이걸 해야 하나" />
+      <div className="grid md:grid-cols-2 gap-3">
+        {[
+          ['리텐션 해자', '프레임·판단 기록이 쌓일수록 개인화가 깊어지고 이탈 비용이 커진다.'],
+          ['차별화', '증권봇·AI인사이트가 "답"을 줄 때, 판단력을 키우는 유일한 결.'],
+          ['자산 활용', '이미 활성화된 커뮤니티 + 2030 초보 유저베이스에 자연스럽게 얹힌다.'],
+          ['브랜드 정합', '"쉽고 친근하게, 스스로 투자하게" — 카카오페이 결과 일치.'],
+        ].map(([t, d]) => (
+          <Card key={t}>
+            <div className="font-bold">{t}</div>
+            <div className="mt-1 text-sm text-gray-600">{d}</div>
+          </Card>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Risks() {
+  const rows: [string, string][] = [
+    ['AI 안전벨트 착시(과신)', '답을 안 줌 + "한 번 더 생각" 마찰 + 프레임 위반 경고'],
+    ['책임 전가', '결정 주체는 사용자임을 상시 명시 + 면책 고지'],
+    ['백테스트 과최적화', '"정답 아닌 참고"로 상시 고지 + 표본/구간 경고 노출'],
+    ['투자자문 규제', "자문이 아닌 '보완' — 개별 종목 매수·매도 지시 안 함, 면책 고지"],
+    ['데이터/자막 한계', '제공자 추상화(토스↔Yahoo 스왑) + 온램프 폴백'],
+    ['채택 저항(프레임=노동)', 'AI가 대화로 초안 대신 작성 + 예시 프레임 제공'],
+  ]
+  return (
+    <section className="space-y-4">
+      <H2 id="risk" kicker="Risks & Mitigations · 리스크와 완화" title="무엇이 위험하고, 어떻게 막나" />
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <tbody>
+              {rows.map(([a, b]) => (
+                <tr key={a} className="border-t first:border-t-0">
+                  <td className="py-2 pr-3 font-semibold whitespace-nowrap align-top text-red-600">{a}</td>
+                  <td className="py-2 text-gray-600">{b}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </section>
+  )
+}
+
+function OpenQuestions() {
+  return (
+    <section className="space-y-4">
+      <H2 kicker="Open Questions · 남은 결정" title="아직 열려 있는 질문들" />
+      <Card>
+        <ul className="text-sm text-gray-600 space-y-1.5 list-disc ml-4">
+          <li>개인 표본이 적을 때 프레임 진화의 과최적화를 어떻게 방지할까? (다종목·다구간 검증)</li>
+          <li>프레임 만들기를 얼마나 더 가볍게 만들 수 있나? (온보딩 이탈 최소화)</li>
+          <li>커뮤니티 발행에서 "자랑"이 아닌 "근거" 문화를 어떻게 유지할까?</li>
+          <li>수익화 라인은? (심화 회고·멀티 전략·프리미엄 코칭)</li>
         </ul>
       </Card>
     </section>
