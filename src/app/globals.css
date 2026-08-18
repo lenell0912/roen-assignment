@@ -2,5 +2,177 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
-body { background: #eef1f5; }
+/* ─────────────────────────────────────────────
+   KakaoPay Design System — tokens
+   ───────────────────────────────────────────── */
+:root {
+  /* Primary — Kakao Yellow */
+  --color-primary-50: #fffef0;
+  --color-primary-100: #fffac2;
+  --color-primary-200: #fff285;
+  --color-primary-300: #ffec47;
+  --color-primary-400: #ffe61f;
+  --color-primary-500: #fee500;
+  --color-primary-600: #e5ce00;
+  --color-primary-700: #b8a500;
+  --color-primary-800: #8a7c00;
+  --color-primary-900: #5c5300;
+
+  --color-secondary-500: #ff6f61; /* 결제 코랄 */
+  --color-tertiary-500: #3478f6; /* 송금/금융 파랑 */
+
+  /* Neutral — Kakao Gray */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f1f3f5;
+  --color-neutral-200: #e8eaed;
+  --color-neutral-300: #dee2e6;
+  --color-neutral-500: #b8bdc4;
+  --color-neutral-700: #7e8593;
+  --color-neutral-800: #4a4f58;
+  --color-neutral-900: #191919;
+
+  /* Semantic */
+  --color-success-bg: #e8f8e8;
+  --color-success-fg: #1ea64a;
+  --color-warning-bg: #fff6e0;
+  --color-warning-fg: #f2a50c;
+  --color-error-bg: #ffeded;
+  --color-error-fg: #e53935;
+  --color-info-bg: #e8f0fe;
+  --color-info-fg: #3478f6;
+
+  /* Surface */
+  --bg-base: #f7f8fa;
+  --bg-subtle: #f1f3f5;
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(25, 25, 25, 0.55);
+
+  /* Text */
+  --text-primary: #191919;
+  --text-secondary: #4a4f58;
+  --text-tertiary: #7e8593;
+  --text-on-primary: #191919; /* Yellow 위는 검정 */
+  --text-disabled: #b8bdc4;
+
+  /* Border */
+  --border-default: #e8eaed;
+  --border-subtle: #f1f3f5;
+  --border-strong: #dee2e6;
+  --border-focus: #3478f6;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px; /* 카드 시그니처 */
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadow — flat, 미세 elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 32px rgba(254, 229, 0, 0.3); /* CTA 노란 발광 */
+
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Kakao Sans', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Segoe UI', 'Noto Sans KR', sans-serif;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────
+   Component primitives (KakaoPay)
+   ───────────────────────────────────────────── */
+.kp-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-md);
+}
+.kp-card-flat {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid var(--border-default);
+}
+.kp-card-yellow {
+  background: var(--color-primary-500);
+  color: var(--text-on-primary);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.btn {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border-radius: var(--radius-md);
+  padding: 13px 18px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, transform 80ms ease;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn-primary {
+  background: var(--color-primary-500);
+  color: var(--text-on-primary);
+  font-weight: 800;
+}
+.btn-primary:hover {
+  background: var(--color-primary-400);
+}
+.btn-secondary {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-tertiary-500);
+}
+
+.tag {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 11px;
+  display: inline-block;
+}
+.tag-subtle {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+.tag-outline {
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.kp-input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  color: var(--text-primary);
+}
+.kp-input:focus {
+  outline: 0;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(52, 120, 246, 0.18);
+}
