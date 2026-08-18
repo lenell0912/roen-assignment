@@ -33,7 +33,9 @@ export default function PRD() {
         <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
           <Problem />
           <Target />
+          <Scenario />
           <Solution />
+          <Goals />
           <Novelty />
           <Hypotheses />
           <Differentiation />
@@ -42,8 +44,6 @@ export default function PRD() {
       ) : (
         // 상세 = 부록(더 깊은 근거). 탭으로 진입.
         <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
-          <Scenario />
-          <Goals />
           <MvpScope />
           <StrategicFit />
           <Risks />
@@ -59,8 +59,6 @@ export default function PRD() {
 
 function TopBar({ mode, onSummary, onSection }: { mode: 'summary' | 'detail'; onSummary: () => void; onSection: (id: string) => void }) {
   const sections: [string, string][] = [
-    ['시나리오', 'scenario'],
-    ['목표·비목표', 'goals'],
     ['스코프', 'scope'],
     ['전략적합성', 'fit'],
     ['리스크', 'risk'],
@@ -299,14 +297,14 @@ function Novelty() {
           </Card>
         ))}
       </div>
-      <Card className="bg-[#191919] text-white">
+      <div className="bg-[#191919] text-white rounded-2xl p-5">
         <div className="text-xs font-bold text-[#fee500]">실제 동작 예 · 프레임 진화</div>
         <div className="mt-2 text-sm leading-relaxed">
           삼성전자에서 규칙을 채점하니 — <b>정배열</b> 규칙은 엣지 <span className="text-emerald-400">+4.8%p</span>(유지),{' '}
-          <b>고점회피</b> 규칙은 <span className="text-red-400">−13.3%p</span>로 오히려 손해. AI가 "고점회피 10%→5%로 완화"를 데이터 근거로 제안하고, 한 번 누르면 프레임이 스스로 수정된다.{' '}
+          <b>고점회피</b> 규칙은 <span className="text-red-400">−13.3%p</span>로 오히려 손해. AI가 &quot;고점회피 10%→5%로 완화&quot;를 데이터 근거로 제안하고, 한 번 누르면 프레임이 스스로 수정된다.{' '}
           <span className="text-gray-400">(과최적화 경고 포함)</span>
         </div>
-      </Card>
+      </div>
     </section>
   )
 }
