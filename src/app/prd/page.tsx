@@ -29,20 +29,22 @@ export default function PRD() {
       <TopBar mode={mode} onSummary={goSummary} onSection={goSection} />
       <Hero />
       {mode === 'summary' ? (
-        <div className="max-w-3xl mx-auto px-5 pb-24">
-          <Summary onDetail={() => goSection('problem')} />
-        </div>
-      ) : (
+        // 요약 개요 = 핵심 PRD (과제 필수 + 테제). 1~2장 분량.
         <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
           <Problem />
           <Target />
-          <Scenario />
-          <Goals />
           <Solution />
-          <MvpScope />
           <Novelty />
           <Hypotheses />
           <Differentiation />
+          <FooterCTA />
+        </div>
+      ) : (
+        // 상세 = 부록(더 깊은 근거). 탭으로 진입.
+        <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
+          <Scenario />
+          <Goals />
+          <MvpScope />
           <StrategicFit />
           <Risks />
           <Roadmap />
@@ -57,14 +59,14 @@ export default function PRD() {
 
 function TopBar({ mode, onSummary, onSection }: { mode: 'summary' | 'detail'; onSummary: () => void; onSection: (id: string) => void }) {
   const sections: [string, string][] = [
-    ['문제', 'problem'],
     ['시나리오', 'scenario'],
-    ['해결', 'solution'],
+    ['목표·비목표', 'goals'],
     ['스코프', 'scope'],
-    ['새로움', 'novelty'],
-    ['지표', 'hypo'],
+    ['전략적합성', 'fit'],
     ['리스크', 'risk'],
     ['로드맵', 'roadmap'],
+    ['남은질문', 'open'],
+    ['AI활용', 'ai'],
   ]
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
@@ -405,7 +407,7 @@ function Roadmap() {
 function AiUsage() {
   return (
     <section className="space-y-4">
-      <H2 kicker="How we used AI · AI 활용" title="AI로 어떻게 만들었나" />
+      <H2 id="ai" kicker="How we used AI · AI 활용" title="AI로 어떻게 만들었나" />
       <Card>
         <ul className="text-sm text-gray-600 space-y-1.5 list-disc ml-4">
           <li>
@@ -461,7 +463,7 @@ function Scenario() {
 function Goals() {
   return (
     <section className="space-y-4">
-      <H2 kicker="Goals & Non-goals · 목표와 비목표" title="무엇을 하고, 무엇을 안 하나" />
+      <H2 id="goals" kicker="Goals & Non-goals · 목표와 비목표" title="무엇을 하고, 무엇을 안 하나" />
       <div className="grid md:grid-cols-2 gap-3">
         <Card className="border-emerald-200">
           <div className="font-bold text-emerald-700">목표 (Goals)</div>
@@ -517,7 +519,7 @@ function MvpScope() {
 function StrategicFit() {
   return (
     <section className="space-y-4">
-      <H2 kicker="Strategic Fit · 전략적 적합성" title="왜 카카오페이증권이 이걸 해야 하나" />
+      <H2 id="fit" kicker="Strategic Fit · 전략적 적합성" title="왜 카카오페이증권이 이걸 해야 하나" />
       <div className="grid md:grid-cols-2 gap-3">
         {[
           ['리텐션 해자', '프레임·판단 기록이 쌓일수록 개인화가 깊어지고 이탈 비용이 커진다.'],
@@ -568,7 +570,7 @@ function Risks() {
 function OpenQuestions() {
   return (
     <section className="space-y-4">
-      <H2 kicker="Open Questions · 남은 결정" title="아직 열려 있는 질문들" />
+      <H2 id="open" kicker="Open Questions · 남은 결정" title="아직 열려 있는 질문들" />
       <Card>
         <ul className="text-sm text-gray-600 space-y-1.5 list-disc ml-4">
           <li>개인 표본이 적을 때 프레임 진화의 과최적화를 어떻게 방지할까? (다종목·다구간 검증)</li>
