@@ -77,13 +77,11 @@ function TopBar({ active, onSummary, onSection }: { active: string; onSummary: (
           프로토타입 열기 →
         </Link>
       </div>
-      <div className="border-t">
-        <div className="max-w-3xl mx-auto px-5 flex items-center gap-5 overflow-x-auto">
-          <TabBtn label="요약 개요" active={active === 'summary'} onClick={onSummary} />
-          {sections.map(([label, id]) => (
-            <TabBtn key={id} label={label} active={active === id} onClick={() => onSection(id)} />
-          ))}
-        </div>
+      <div className="max-w-3xl mx-auto px-5 flex items-center gap-5">
+        <TabBtn label="요약 개요" active={active === 'summary'} onClick={onSummary} />
+        {sections.map(([label, id]) => (
+          <TabBtn key={id} label={label} active={active === id} onClick={() => onSection(id)} />
+        ))}
       </div>
     </div>
   )
@@ -93,7 +91,7 @@ function TabBtn({ label, active, onClick }: { label: string; active: boolean; on
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+      className={`shrink-0 py-3 text-sm font-semibold border-b-[3px] transition-colors ${
         active ? 'border-[#191919] text-[#191919]' : 'border-transparent text-gray-400 hover:text-gray-700'
       }`}
     >
@@ -103,20 +101,16 @@ function TabBtn({ label, active, onClick }: { label: string; active: boolean; on
 }
 
 function FrameLogo() {
-  const [ok, setOk] = useState(false)
   return (
-    <span className="flex items-center gap-2">
-      {!ok && (
-        <span className="inline-flex items-center font-extrabold text-[#16244a] text-lg" style={{ letterSpacing: '-0.03em' }}>
-          <span>[</span>
-          <span className="mx-1">
-            F<span className="text-[#2f6bff]">r</span>ame
-          </span>
-          <span>]</span>
-        </span>
-      )}
-      <img src="/frame-logo.png" alt="Frame" onLoad={() => setOk(true)} className={`h-7 ${ok ? 'block' : 'hidden'}`} />
-      <span className="text-xs text-gray-400 font-semibold">PRD</span>
+    <span
+      className="select-none inline-flex items-center gap-1 font-black text-[#16244a] text-xl leading-none"
+      style={{ letterSpacing: '-0.04em' }}
+      aria-label="Frame"
+    >
+      <span aria-hidden>[</span>
+      <span aria-hidden className="mx-0.5 inline-block h-3.5 w-2 -skew-x-12 bg-[#2f6bff]" />
+      <span>Frame</span>
+      <span aria-hidden className="ml-0.5">]</span>
     </span>
   )
 }
@@ -159,22 +153,15 @@ function Summary({ onDetail }: { onDetail: () => void }) {
 function Hero() {
   return (
     <header className="bg-white border-b">
-      <div className="max-w-3xl mx-auto px-5 py-14">
+      <div className="max-w-3xl mx-auto px-5 py-8">
         <div className="text-xs font-bold text-[#c9a800]">카카오페이증권 · 프로덕트 빌더(시니어) 과제</div>
         <h1 className="mt-3 text-3xl md:text-4xl font-extrabold leading-tight tracking-tight">
           사용자와 성장하는 투자 에이전트, Frame
         </h1>
         <p className="mt-4 text-gray-600 text-[15px] leading-relaxed">
-          혼자 사고팔다 보면 &quot;내가 이걸 왜 샀지?&quot; 싶은 순간, 있으시죠. Frame은 정답을 대신 내려주지 않아요.
-          그저 곁에서 함께 들여다보며, 당신만의 투자 기준이 조금씩 단단해지도록 거들 뿐이에요.
+          혼자 사고팔다 보면 &quot;내가 이걸 왜 샀지?&quot; 싶은 순간을 Frame이 기록하고 같이 고민합니다. 투자 동반자로서
+          사용자의 곁에서 함께, 더 좋은 투자를 할 수 있도록 사용자만의 투자 기준과 가치관을 조금씩 단단하게 만들어갑니다.
         </p>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {['2030 초보·감투자자', '토스증권 오픈API 실연동', 'Claude Sonnet 에이전트', '탐색형 프로토타입'].map((c) => (
-            <span key={c} className="text-xs bg-[#fff8cc] text-[#8a7400] px-2.5 py-1 rounded-full font-medium">
-              {c}
-            </span>
-          ))}
-        </div>
       </div>
     </header>
   )
