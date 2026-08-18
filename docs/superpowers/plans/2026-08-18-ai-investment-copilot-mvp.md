@@ -10,7 +10,7 @@
 
 **보안:** 토스증권 client_id/secret, ANTHROPIC_API_KEY는 사용자가 `.env.local`에 직접 입력. 코드/문서/커밋에 키를 하드코딩하지 않는다.
 
-> **API 검증 주의:** 토스증권의 정확한 엔드포인트 파라미터·응답 필드명은 실행 시 [개발자센터](https://developers.tossinvest.com/docs)의 OpenAPI JSON 스펙으로 대조 확인한다. 아래 값(토큰 `POST /oauth2/token`, 현재가 `/v1/market/price`, 캔들 `/v1/market/candles`)은 가이드 기준값이며 첫 실호출 테스트(Task 4)에서 검증한다.
+> **API 스펙(실호출 검증 완료 2026-08-18):** 토큰 `POST /oauth2/token`(Basic 인증), 현재가 `GET /api/v1/prices?symbols={code}`→`result[].lastPrice`, 캔들 `GET /api/v1/candles?symbol={code}&interval=1d&count={1~200}`→`result.candles[].closePrice`(응답 최신→과거 순). 스펙 원문: [openapi.json](https://openapi.tossinvest.com/openapi-docs/latest/openapi.json).
 
 ---
 
@@ -319,17 +319,26 @@ async function authGet(path: string) {
   return res.json()
 }
 
-// ⚠️ 응답 필드명(가격/종가/등락률)은 OpenAPI 스펙으로 Step 5에서 검증·수정
+// ✅ 실호출 검증 완료(2026-08-18): /api/v1/prices, /api/v1/candles
 export const tossProvider: MarketData = {
   async getQuote(code: string): Promise<Quote> {
-    const j = await authGet(`/v1/market/price?stockCode=${code}`)
-    const d = j.result ?? j.data ?? j
-    return { code, name: d.stockName ?? d.name, price: Number(d.price ?? d.close), changeRate: Number(d.changeRate ?? d.fluctuationRate) }
+    const j = await authGet(`/api/v1/prices?symbols=${code}`)
+    const price = Number(j.result?.[0]?.lastPrice)
+    // prices 응답엔 등락률이 없어 최근 2 일봉으로 계산
+    let changeRate = 0
+    try {
+      const c = await authGet(`/api/v1/candles?symbol=${code}&interval=1d&count=2`)
+      const cs = (c.result?.candles ?? []).map((r: any) => Number(r.closePrice)) // 최신→과거
+      if (cs.length >= 2 && cs[1]) changeRate = ((cs[0] - cs[1]) / cs[1]) * 100
+    } catch {}
+    return { code, price, changeRate }
   },
   async getDailyCloses(code: string, days = 60): Promise<number[]> {
-    const j = await authGet(`/v1/market/candles?stockCode=${code}&interval=day&count=${days}`)
-    const rows: any[] = j.result ?? j.candles ?? j.data ?? []
-    return rows.map(r => Number(r.close ?? r.closePrice)).filter(n => !isNaN(n)).reverse()
+    const count = Math.min(Math.max(days, 30), 200)
+    const j = await authGet(`/api/v1/candles?symbol=${code}&interval=1d&count=${count}`)
+    const rows: any[] = j.result?.candles ?? []
+    // 응답은 최신→과거, closePrice는 문자열 → 과거→최신으로 뒤집고 숫자화
+    return rows.map(r => Number(r.closePrice)).filter(n => !isNaN(n)).reverse()
   },
 }
 ```
@@ -381,7 +390,7 @@ export async function GET(req: NextRequest) {
 }
 ```
 
-- [ ] **Step 5: 실호출 검증** — 먼저 무계좌로 `.env.local`에 `MARKET_PROVIDER=yahoo` → `npm run dev` → `http://localhost:3000/api/quote?code=005930` → 삼성전자 시세 JSON 확인. 이어서 토스 키 넣고 `MARKET_PROVIDER=toss`로 전환해 동일 확인. **이때 토스 응답 필드명을 OpenAPI 스펙과 대조**해 `toss.ts` 매핑(가격/종가/등락률) 수정.
+- [ ] **Step 5: 실호출 검증** — `npm run dev` → `http://localhost:3000/api/quote?code=005930` → 삼성전자 시세 JSON 확인. `MARKET_PROVIDER=yahoo`(무계좌)와 `=toss` 둘 다 확인. (토스 엔드포인트/필드는 2026-08-18 실호출 검증 완료 — 필드명 그대로 사용.)
 - [ ] **Step 6: 커밋** — `git commit -am "feat: MarketData 추상화(토스 주 + Yahoo 폴백) + 시세/일봉 API"`
 
 ---
@@ -890,4 +899,5 @@ export function CommunityCard() {
 - **Spec 커버리지:** 코파일럿 대화(Task 9,11) · 영상→내 전략(Task 5~7,12) · 실시세(토스 주+Yahoo 폴백, Task 4) · 개인위키 라이트(Task 12) · 커뮤니티 목업(Task 12) · 플로팅 진입점/화면맥락(Task 10,11) · 페르소나·원칙(Task 8) · 데모 포트폴리오(Task 8) · 면책/PRD/AI활용(Task 13) 모두 매핑됨. 로드맵 항목(백테스트·자동주문·코치·카톡 실연동)은 의도적으로 구현 제외(PRD 기술만).
 - **타입 일관성:** `evaluateSmaCross`/`Strategy`/`Holding`/`runTool`/`MarketData`/`getQuote`/`getDailyCloses` 명칭이 태스크 간 일치. 시세는 전부 `@/lib/market`에서 import(kis 잔재 없음). 전략 `type`은 `sma_cross`(신호 계산) | `unsupported`(요약·한계만) 2종을 스키마·추출·파이프라인·UI 4곳에서 일관 처리.
 - **정직 처리 확인:** 미지원 기법은 `/api/strategy`가 `signal:null, supported:false` 반환 → `StrategyResult`가 신호 대신 "미지원" 안내 렌더(신호 조작 없음).
-- **미검증 리스크(실행 중 확인):** ① 토스 엔드포인트 응답 필드명(Task 4 Step5, OpenAPI 스펙 대조) ② 유튜브 자막 존재(Task 5 Step3 폴백) ③ Yahoo 코스닥 심볼 `.KQ` 매핑 ④ Claude 모델 id는 실행 시점 최신으로 확인(`claude-api` 스킬 참고).
+- **연결 검증 완료(2026-08-18):** Anthropic(`claude-sonnet-5` 200) · 토스 토큰+`/api/v1/prices`+`/api/v1/candles`(삼성전자 실데이터) · Yahoo(무계좌) 모두 실호출 성공.
+- **남은 리스크(실행 중 확인):** ① 유튜브 자막 존재(Task 5 Step3 폴백) ② Yahoo 코스닥 심볼 `.KQ` 매핑 ③ 서버리스 배포 시 토스 호출 IP 정책.
