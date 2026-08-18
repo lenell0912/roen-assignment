@@ -83,7 +83,7 @@ export function AgentApp({ onExit }: { onExit: () => void }) {
           {tab === 'chat' && <ChatPage code={code} frame={frame} seed={seed} onOpenPage={(t) => setTab(t as Tab)} />}
           {tab === 'frame' && <FramePage frame={frame} setFrame={setFrame} />}
           {tab === 'decision' && <DecisionPage code={code} frame={frame} />}
-          {tab === 'retro' && <RetroPage code={code} frame={frame} />}
+          {tab === 'retro' && <RetroPage code={code} frame={frame} setFrame={setFrame} />}
           {tab === 'wiki' && <WikiPage frame={frame} />}
           {tab === 'community' && <CommunityPage code={code} />}
         </div>
