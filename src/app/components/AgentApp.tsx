@@ -3,6 +3,11 @@ import { useState } from 'react'
 import { Frame } from '@/lib/frame'
 import { loadFrame } from '@/lib/frameStore'
 import { ChatPage } from './ChatPage'
+import { FramePage } from './FramePage'
+import { DecisionPage } from './DecisionPage'
+import { RetroPage } from './RetroPage'
+import { WikiPage } from './WikiPage'
+import { CommunityPage } from './CommunityPage'
 
 export type Tab = 'chat' | 'frame' | 'decision' | 'retro' | 'wiki' | 'community'
 
@@ -76,9 +81,11 @@ export function AgentApp({ onExit }: { onExit: () => void }) {
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 min-w-0 border-r">
           {tab === 'chat' && <ChatPage code={code} frame={frame} seed={seed} onOpenPage={(t) => setTab(t as Tab)} />}
-          {tab !== 'chat' && (
-            <div className="p-6 text-gray-400 text-sm">「{TABS.find((t) => t.id === tab)?.label}」 페이지 — 곧 채워짐 (Task 8)</div>
-          )}
+          {tab === 'frame' && <FramePage frame={frame} setFrame={setFrame} />}
+          {tab === 'decision' && <DecisionPage code={code} frame={frame} />}
+          {tab === 'retro' && <RetroPage code={code} frame={frame} />}
+          {tab === 'wiki' && <WikiPage frame={frame} />}
+          {tab === 'community' && <CommunityPage code={code} />}
         </div>
 
         {/* 시나리오 패널 */}
