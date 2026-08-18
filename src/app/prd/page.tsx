@@ -1,37 +1,62 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 const KAKAO_FONT = '"Apple SD Gothic Neo", Pretendard, "Noto Sans KR", system-ui, sans-serif'
 
 export default function PRD() {
+  const [mode, setMode] = useState<'summary' | 'detail'>('summary')
+  const [pending, setPending] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (mode === 'detail' && pending) {
+      document.getElementById(pending)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setPending(null)
+    }
+  }, [mode, pending])
+
+  const goSection = (id: string) => {
+    setMode('detail')
+    setPending(id)
+  }
+  const goSummary = () => {
+    setMode('summary')
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div style={{ fontFamily: KAKAO_FONT }} className="min-h-screen bg-[#f7f8fa] text-[#191919]">
-      <TopBar />
+      <TopBar mode={mode} onSummary={goSummary} onSection={goSection} />
       <Hero />
-      <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14">
-        <Problem />
-        <Target />
-        <Scenario />
-        <Goals />
-        <Solution />
-        <MvpScope />
-        <Novelty />
-        <Hypotheses />
-        <Differentiation />
-        <StrategicFit />
-        <Risks />
-        <Roadmap />
-        <OpenQuestions />
-        <AiUsage />
-        <FooterCTA />
-      </div>
+      {mode === 'summary' ? (
+        <div className="max-w-3xl mx-auto px-5 pb-24">
+          <Summary onDetail={() => goSection('problem')} />
+        </div>
+      ) : (
+        <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
+          <Problem />
+          <Target />
+          <Scenario />
+          <Goals />
+          <Solution />
+          <MvpScope />
+          <Novelty />
+          <Hypotheses />
+          <Differentiation />
+          <StrategicFit />
+          <Risks />
+          <Roadmap />
+          <OpenQuestions />
+          <AiUsage />
+          <FooterCTA />
+        </div>
+      )}
     </div>
   )
 }
 
-function TopBar() {
-  const nav = [
+function TopBar({ mode, onSummary, onSection }: { mode: 'summary' | 'detail'; onSummary: () => void; onSection: (id: string) => void }) {
+  const sections: [string, string][] = [
     ['문제', 'problem'],
     ['시나리오', 'scenario'],
     ['해결', 'solution'],
@@ -42,21 +67,67 @@ function TopBar() {
     ['로드맵', 'roadmap'],
   ]
   return (
-    <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b">
-      <div className="max-w-3xl mx-auto px-5 h-14 flex items-center gap-3">
-        <span className="font-extrabold">PRD · AI 투자 코파일럿</span>
-        <nav className="hidden md:flex gap-3 text-sm text-gray-500 ml-2">
-          {nav.map(([label, id]) => (
-            <a key={id} href={`#${id}`} className="hover:text-black">
-              {label}
-            </a>
-          ))}
-        </nav>
+    <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
+      <div className="max-w-3xl mx-auto px-5 h-12 flex items-center gap-3">
+        <span className="font-extrabold text-sm">PRD · AI 투자 코파일럿</span>
         <Link href="/" className="ml-auto text-sm font-semibold bg-[#fee500] px-3 py-1.5 rounded-full">
           프로토타입 열기 →
         </Link>
       </div>
+      <div className="max-w-3xl mx-auto px-5 flex items-center gap-1.5 overflow-x-auto pb-2 border-t">
+        <button
+          onClick={onSummary}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-bold ${mode === 'summary' ? 'bg-[#191919] text-white' : 'bg-[#f1f3f5] text-gray-600'}`}
+        >
+          요약 개요
+        </button>
+        <span className="w-px h-4 bg-gray-300 mx-1 shrink-0" aria-hidden />
+        {sections.map(([label, id]) => (
+          <button
+            key={id}
+            onClick={() => onSection(id)}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-sm ${mode === 'detail' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-100'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
+  )
+}
+
+function Summary({ onDetail }: { onDetail: () => void }) {
+  const rows: [string, ReactNode][] = [
+    ['문제', <>정보는 넘치는데 <b>스스로 판단이 안 된다</b> — 거래 프레임(판단 기준)과 피드백 루프의 부재. 그 결과 쏠림·추격매수·뇌동매매로 실패한다.</>],
+    ['타겟', <>2030 초보 + 감으로 투자하는 사람</>],
+    ['해결', <><b>&quot;나만의 거래 프레임&quot;</b>을 만들고·지키고·다듬는 루프(형성→결정→기록→회고·진화). 답을 주지 않고 판단을 보완하는 코파일럿.</>],
+    ['새로움', <>추천을 거부하는 AI + 결정 직전 개입 + <b>프레임이 내 결과로 스스로 진화.</b></>],
+    ['가설', <>프레임 대조 → 근거 있는 결정↑ · 기록·되먹임 → 판단력 성장 · 프레임 → 감정매매↓</>],
+    ['검증 지표', <>NSM: 프레임에 근거한 결정 비율 · 위반 경고 시 보류율 · 회고/진화 횟수 · WAU</>],
+    ['차별화', <>증권봇·AI인사이트가 &quot;답&quot;을 줄 때, 우리는 <b>판단력을 키운다.</b></>],
+  ]
+  return (
+    <section className="pt-8">
+      <div className="text-xs text-gray-400 mb-3">요약 개요 · 30초 · 상세는 위 탭에서</div>
+      <Card>
+        <div className="divide-y">
+          {rows.map(([label, node]) => (
+            <div key={label} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+              <span className="shrink-0 w-16 text-xs font-bold text-[#b8a500] pt-0.5">{label}</span>
+              <div className="text-sm text-gray-700 leading-relaxed">{node}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <div className="mt-4 flex gap-2">
+        <button onClick={onDetail} className="bg-[#191919] text-white px-4 py-2 rounded-full text-sm font-semibold">
+          상세 PRD 보기 →
+        </button>
+        <Link href="/" className="px-4 py-2 rounded-full text-sm font-semibold text-gray-600 bg-[#f1f3f5]">
+          프로토타입 열기
+        </Link>
+      </div>
+    </section>
   )
 }
 
