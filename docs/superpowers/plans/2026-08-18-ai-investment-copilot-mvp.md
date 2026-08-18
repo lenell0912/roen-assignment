@@ -2,15 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 카카오페이증권 앱 화면(스크린샷) 위에 뜨는 플로팅 코파일럿 — "이거 사도 돼?" 대화 + "유튜브 영상 → 내 전략" 실동작을, 한국투자증권(KIS) 실시간/과거 시세와 Claude로 구현한다.
+**Goal:** 카카오페이증권 앱 화면(스크린샷) 위에 뜨는 플로팅 코파일럿 — "이거 사도 돼?" 대화 + "유튜브 영상 → 내 전략" 실동작을, 실제 시장 데이터(토스증권 오픈 API 주 제공자, Yahoo 폴백)와 Claude로 구현한다.
 
-**Architecture:** Next.js(App Router, TS) 단일 앱. 서버 route handler가 (a) KIS API(토큰·현재가·일봉), (b) 유튜브 자막, (c) Claude(페르소나 대화 + 기법 추출)를 감싼다. **LLM은 "이해/추출"만, 신호 계산은 결정론적 코드**로 분리해 신뢰성을 확보한다. 클라이언트는 스크린샷 배경 위 FAB + 바텀시트 챗.
+**Architecture:** Next.js(App Router, TS) 단일 앱. **MarketData provider 추상화**(토스증권=주, Yahoo=무계좌 폴백) 위에서 서버 route handler가 (a) 시세·일봉, (b) 유튜브 자막, (c) Claude(페르소나 대화 + 기법 추출)를 감싼다. **LLM은 "이해/추출"만, 신호 계산은 결정론적 코드**로 분리해 신뢰성을 확보한다. 지원하지 않는 기법은 신호를 지어내지 않고 요약·한계만 제공(정직 처리). 클라이언트는 스크린샷 배경 위 FAB + 바텀시트 챗.
 
-**Tech Stack:** Next.js 14 (App Router, TypeScript), Tailwind, Vitest, `@anthropic-ai/sdk`, `youtube-transcript`, KIS REST API.
+**Tech Stack:** Next.js 14 (App Router, TypeScript), Tailwind, Vitest, `@anthropic-ai/sdk`, `youtube-transcript`, `yahoo-finance2`, 토스증권 Open API (REST).
 
-**보안:** KIS appkey/secret/계좌, ANTHROPIC_API_KEY는 사용자가 `.env.local`에 직접 입력. 코드/문서/커밋에 키를 하드코딩하지 않는다.
+**보안:** 토스증권 client_id/secret, ANTHROPIC_API_KEY는 사용자가 `.env.local`에 직접 입력. 코드/문서/커밋에 키를 하드코딩하지 않는다.
 
-> **API 검증 주의:** KIS의 정확한 `tr_id`·경로·응답 필드는 실행 시 [공식 문서](https://apiportal.koreainvestment.com)와 [공식 GitHub](https://github.com/koreainvestment/open-trading-api)로 대조 확인한다. 아래 값은 알려진 기준값이며, 첫 실호출 테스트(Task 4)에서 검증한다.
+> **API 검증 주의:** 토스증권의 정확한 엔드포인트 파라미터·응답 필드명은 실행 시 [개발자센터](https://developers.tossinvest.com/docs)의 OpenAPI JSON 스펙으로 대조 확인한다. 아래 값(토큰 `POST /oauth2/token`, 현재가 `/v1/market/price`, 캔들 `/v1/market/candles`)은 가이드 기준값이며 첫 실호출 테스트(Task 4)에서 검증한다.
 
 ---
 
@@ -19,10 +19,11 @@
 ```
 src/
   lib/
-    kis/
-      auth.ts          # KIS 토큰 발급 + 캐시
-      client.ts        # KIS fetch 래퍼 (현재가/일봉)
-      types.ts         # KIS 응답 타입
+    market/
+      types.ts         # MarketData 인터페이스, Quote 타입
+      toss.ts          # 토스증권 제공자 (OAuth 토큰 캐시, 현재가, 캔들)
+      yahoo.ts         # Yahoo 제공자 (yahoo-finance2, 무계좌 폴백)
+      index.ts         # env 기반 제공자 선택 + getQuote/getDailyCloses 재노출
     indicators.ts      # SMA, RSI (순수 함수)
     signal.ts          # 전략 신호 평가 (sma_cross 등, 순수 함수)
     strategy/
@@ -66,7 +67,7 @@ public/screens/            # home.png, stock-detail.png, community.png, account.
 
 ```bash
 npx create-next-app@latest . --typescript --tailwind --app --src-dir --no-eslint --use-npm --yes
-npm i @anthropic-ai/sdk youtube-transcript zod
+npm i @anthropic-ai/sdk youtube-transcript zod yahoo-finance2
 npm i -D vitest @vitejs/plugin-react
 ```
 
@@ -82,14 +83,15 @@ export default defineConfig({
 - [ ] **Step 3: `.env.example` 작성 (키는 비워둠)**
 
 ```
-# 한국투자증권 KIS Developers (https://apiportal.koreainvestment.com)
-KIS_APP_KEY=
-KIS_APP_SECRET=
-KIS_ACCOUNT_NO=            # 8자리-2자리 (모의계좌 권장)
-KIS_ENV=vts                # vts=모의, prod=실전
+# 시장 데이터 제공자: toss(주) | yahoo(무계좌 폴백)
+MARKET_PROVIDER=toss
+# 토스증권 Open API (앱 설정에서 즉시 발급, https://developers.tossinvest.com)
+TOSS_CLIENT_ID=
+TOSS_CLIENT_SECRET=
 # Anthropic
 ANTHROPIC_API_KEY=
 ```
+> 계좌 준비 전에는 `MARKET_PROVIDER=yahoo`로 두면 키 없이 개발·데모 가능.
 
 - [ ] **Step 4: `package.json`에 test script 추가**
 
@@ -257,95 +259,110 @@ export function evaluateSmaCross(closes: number[], fastP = 5, slowP = 20): Signa
 
 ---
 
-## Task 4: KIS 클라이언트 (토큰 + 현재가 + 일봉)
+## Task 4: MarketData 제공자 추상화 (토스증권 주 + Yahoo 폴백)
 
 **Files:**
-- Create: `src/lib/kis/auth.ts`, `src/lib/kis/client.ts`, `src/lib/kis/types.ts`
+- Create: `src/lib/market/types.ts`, `src/lib/market/toss.ts`, `src/lib/market/yahoo.ts`, `src/lib/market/index.ts`
 
-- [ ] **Step 1: 타입 + 토큰 발급/캐시 (`auth.ts`)**
+- [ ] **Step 1: 인터페이스 + 제공자 선택 (`types.ts`, `index.ts`)**
 
 ```ts
-// src/lib/kis/auth.ts
-const BASE = process.env.KIS_ENV === 'prod'
-  ? 'https://openapi.koreainvestment.com:9443'
-  : 'https://openapivts.koreainvestment.com:29443'
+// src/lib/market/types.ts
+export interface Quote { code: string; name?: string; price: number; changeRate: number }
+export interface MarketData {
+  getQuote(code: string): Promise<Quote>
+  /** 일봉 종가 배열, 오래된→최신 순 */
+  getDailyCloses(code: string, days?: number): Promise<number[]>
+}
+```
 
+```ts
+// src/lib/market/index.ts
+import { MarketData } from './types'
+import { tossProvider } from './toss'
+import { yahooProvider } from './yahoo'
+
+function provider(): MarketData {
+  return process.env.MARKET_PROVIDER === 'yahoo' ? yahooProvider : tossProvider
+}
+export const getQuote = (code: string) => provider().getQuote(code)
+export const getDailyCloses = (code: string, days?: number) => provider().getDailyCloses(code, days)
+export type { Quote, MarketData } from './types'
+```
+
+- [ ] **Step 2: 토스증권 제공자 (`toss.ts`) — 토큰 캐시 + 현재가 + 캔들**
+
+```ts
+// src/lib/market/toss.ts
+import { MarketData, Quote } from './types'
+
+const BASE = 'https://openapi.tossinvest.com'
 let cached: { token: string; exp: number } | null = null
 
-export function kisBase() { return BASE }
-
-export async function getToken(): Promise<string> {
+async function token(): Promise<string> {
   if (cached && Date.now() < cached.exp) return cached.token
-  const res = await fetch(`${BASE}/oauth2/tokenP`, {
+  const basic = Buffer.from(`${process.env.TOSS_CLIENT_ID}:${process.env.TOSS_CLIENT_SECRET}`).toString('base64')
+  const res = await fetch(`${BASE}/oauth2/token`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      grant_type: 'client_credentials',
-      appkey: process.env.KIS_APP_KEY,
-      appsecret: process.env.KIS_APP_SECRET,
-    }),
+    headers: { authorization: `Basic ${basic}`, 'content-type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials',
   })
-  if (!res.ok) throw new Error(`KIS token failed: ${res.status} ${await res.text()}`)
+  if (!res.ok) throw new Error(`Toss token failed: ${res.status} ${await res.text()}`)
   const j = await res.json()
-  cached = { token: j.access_token, exp: Date.now() + 1000 * 60 * 60 * 12 }
+  cached = { token: j.access_token, exp: Date.now() + (Number(j.expires_in ?? 3600) - 60) * 1000 }
   return cached.token
 }
+
+async function authGet(path: string) {
+  const res = await fetch(`${BASE}${path}`, { headers: { authorization: `Bearer ${await token()}` } })
+  if (!res.ok) throw new Error(`Toss GET ${path} failed: ${res.status}`)
+  return res.json()
+}
+
+// ⚠️ 응답 필드명(가격/종가/등락률)은 OpenAPI 스펙으로 Step 5에서 검증·수정
+export const tossProvider: MarketData = {
+  async getQuote(code: string): Promise<Quote> {
+    const j = await authGet(`/v1/market/price?stockCode=${code}`)
+    const d = j.result ?? j.data ?? j
+    return { code, name: d.stockName ?? d.name, price: Number(d.price ?? d.close), changeRate: Number(d.changeRate ?? d.fluctuationRate) }
+  },
+  async getDailyCloses(code: string, days = 60): Promise<number[]> {
+    const j = await authGet(`/v1/market/candles?stockCode=${code}&interval=day&count=${days}`)
+    const rows: any[] = j.result ?? j.candles ?? j.data ?? []
+    return rows.map(r => Number(r.close ?? r.closePrice)).filter(n => !isNaN(n)).reverse()
+  },
+}
 ```
 
-- [ ] **Step 2: 현재가 + 일봉 (`client.ts`)**
+- [ ] **Step 3: Yahoo 폴백 제공자 (`yahoo.ts`) — 무계좌**
 
 ```ts
-// src/lib/kis/client.ts
-import { getToken, kisBase } from './auth'
+// src/lib/market/yahoo.ts
+import yahooFinance from 'yahoo-finance2'
+import { MarketData, Quote } from './types'
 
-function headers(trId: string, token: string) {
-  return {
-    authorization: `Bearer ${token}`,
-    appkey: process.env.KIS_APP_KEY!,
-    appsecret: process.env.KIS_APP_SECRET!,
-    tr_id: trId,
-    'content-type': 'application/json',
-  }
-}
+/** KRX 6자리 코드 → Yahoo 심볼. 기본 .KS(코스피), 코스닥은 .KQ 로 매핑 확장 */
+function sym(code: string) { return code.includes('.') ? code : `${code}.KS` }
 
-/** 현재가 (tr_id FHKST01010100) */
-export async function getQuote(code: string) {
-  const token = await getToken()
-  const url = new URL(`${kisBase()}/uapi/domestic-stock/v1/quotations/inquire-price`)
-  url.searchParams.set('fid_cond_mrkt_div_code', 'J')
-  url.searchParams.set('fid_input_iscd', code)
-  const res = await fetch(url, { headers: headers('FHKST01010100', token) })
-  if (!res.ok) throw new Error(`KIS quote failed: ${res.status}`)
-  const j = await res.json()
-  return { code, price: Number(j.output?.stck_prpr), changeRate: Number(j.output?.prdy_ctrt), name: j.output?.hts_kor_isnm }
-}
-
-/** 일봉 종가 배열 (tr_id FHKST03010100), 오래된→최신 순 */
-export async function getDailyCloses(code: string, days = 60): Promise<number[]> {
-  const token = await getToken()
-  const end = new Date(); const start = new Date(); start.setDate(start.getDate() - days * 2)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  const url = new URL(`${kisBase()}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice`)
-  url.searchParams.set('fid_cond_mrkt_div_code', 'J')
-  url.searchParams.set('fid_input_iscd', code)
-  url.searchParams.set('fid_input_date_1', fmt(start))
-  url.searchParams.set('fid_input_date_2', fmt(end))
-  url.searchParams.set('fid_period_div_code', 'D')
-  url.searchParams.set('fid_org_adj_prc', '0')
-  const res = await fetch(url, { headers: headers('FHKST03010100', token) })
-  if (!res.ok) throw new Error(`KIS daily failed: ${res.status}`)
-  const j = await res.json()
-  const rows: any[] = j.output2 ?? []
-  return rows.map(r => Number(r.stck_clpr)).filter(n => !isNaN(n)).reverse()
+export const yahooProvider: MarketData = {
+  async getQuote(code: string): Promise<Quote> {
+    const q = await yahooFinance.quote(sym(code))
+    return { code, name: q.shortName, price: Number(q.regularMarketPrice), changeRate: Number(q.regularMarketChangePercent) }
+  },
+  async getDailyCloses(code: string, days = 60): Promise<number[]> {
+    const period1 = new Date(Date.now() - days * 2 * 864e5)
+    const c = await yahooFinance.chart(sym(code), { period1, interval: '1d' })
+    return c.quotes.map((r: any) => Number(r.close)).filter((n: number) => !isNaN(n))
+  },
 }
 ```
 
-- [ ] **Step 3: route handler `src/app/api/quote/route.ts` + `history/route.ts`**
+- [ ] **Step 4: route handler `src/app/api/quote/route.ts` + `history/route.ts`**
 
 ```ts
 // src/app/api/quote/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getQuote } from '@/lib/kis/client'
+import { getQuote } from '@/lib/market'
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code') ?? '005930'
   try { return NextResponse.json(await getQuote(code)) }
@@ -356,7 +373,7 @@ export async function GET(req: NextRequest) {
 ```ts
 // src/app/api/history/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getDailyCloses } from '@/lib/kis/client'
+import { getDailyCloses } from '@/lib/market'
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code') ?? '005930'
   try { return NextResponse.json({ code, closes: await getDailyCloses(code) }) }
@@ -364,8 +381,8 @@ export async function GET(req: NextRequest) {
 }
 ```
 
-- [ ] **Step 4: 실호출 검증** — `.env.local`에 KIS 키 입력 후: `npm run dev` → 브라우저 `http://localhost:3000/api/quote?code=005930` → 삼성전자 현재가 JSON 확인. **여기서 tr_id/필드명이 공식 문서와 맞는지 대조.** 안 맞으면 `client.ts` 필드 수정.
-- [ ] **Step 5: 커밋** — `git commit -am "feat: KIS 토큰/현재가/일봉 클라이언트 + API 라우트"`
+- [ ] **Step 5: 실호출 검증** — 먼저 무계좌로 `.env.local`에 `MARKET_PROVIDER=yahoo` → `npm run dev` → `http://localhost:3000/api/quote?code=005930` → 삼성전자 시세 JSON 확인. 이어서 토스 키 넣고 `MARKET_PROVIDER=toss`로 전환해 동일 확인. **이때 토스 응답 필드명을 OpenAPI 스펙과 대조**해 `toss.ts` 매핑(가격/종가/등락률) 수정.
+- [ ] **Step 6: 커밋** — `git commit -am "feat: MarketData 추상화(토스 주 + Yahoo 폴백) + 시세/일봉 API"`
 
 ---
 
@@ -437,7 +454,7 @@ it('지원하지 않는 type 거부', () => {
 import { z } from 'zod'
 export const StrategySchema = z.object({
   name: z.string(),
-  type: z.enum(['sma_cross']), // MVP 지원 전략 (확장 시 추가)
+  type: z.enum(['sma_cross', 'unsupported']), // MVP는 sma_cross만 신호 계산; 그 외 기법은 unsupported로 정직 처리
   params: z.object({ fast: z.number(), slow: z.number() }).partial().passthrough(),
   entryRules: z.array(z.string()),
   exitRules: z.array(z.string()),
@@ -468,7 +485,7 @@ export async function extractStrategy(transcript: string): Promise<Strategy> {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          type: { type: 'string', enum: ['sma_cross'] },
+          type: { type: 'string', enum: ['sma_cross', 'unsupported'] },
           params: { type: 'object', properties: { fast: { type: 'number' }, slow: { type: 'number' } } },
           entryRules: { type: 'array', items: { type: 'string' } },
           exitRules: { type: 'array', items: { type: 'string' } },
@@ -481,7 +498,9 @@ export async function extractStrategy(transcript: string): Promise<Strategy> {
     messages: [{
       role: 'user',
       content: `다음은 주식 매매기법 유튜브 영상 자막이다. 여기서 매매 기법을 추출해 record_strategy로 기록하라.\n` +
-        `- 현재 지원 type은 'sma_cross'(단기/장기 이동평균 교차)뿐이다. 영상이 이동평균 교차 계열이면 fast/slow 기간을 채워라(불명확하면 5/20).\n` +
+        `- 영상이 '단기/장기 이동평균 교차' 계열이면 type='sma_cross'로 하고 fast/slow 기간을 채워라(불명확하면 5/20).\n` +
+        `- 그 외 기법(RSI·볼린저·눌림목·캔들·재무 등)이면 type='unsupported'로 하되, name·entryRules·exitRules·assumptions는 정확히 채워라(신호 계산은 하지 않는다).\n` +
+        `- 억지로 sma_cross로 분류하지 마라. 확신이 없으면 unsupported.\n` +
         `- assumptions에는 "이 기법이 안 통하는 상황"(예: 횡보장 휩쏘, 후행성)을 반드시 2개 이상 넣어라.\n\n자막:\n${transcript.slice(0, 6000)}`,
     }],
   })
@@ -505,7 +524,7 @@ export async function extractStrategy(transcript: string): Promise<Strategy> {
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchTranscript } from '@/lib/transcript'
 import { extractStrategy } from '@/lib/strategy/extract'
-import { getDailyCloses } from '@/lib/kis/client'
+import { getDailyCloses } from '@/lib/market'
 import { evaluateSmaCross } from '@/lib/signal'
 
 export async function POST(req: NextRequest) {
@@ -513,16 +532,20 @@ export async function POST(req: NextRequest) {
   try {
     const transcript = await fetchTranscript(url)
     const strategy = await extractStrategy(transcript)
+    // 미지원 기법: 신호를 지어내지 않고 요약·한계만 반환 (정직 처리)
+    if (strategy.type !== 'sma_cross') {
+      return NextResponse.json({ strategy, signal: null, supported: false, code })
+    }
     const closes = await getDailyCloses(code)
     const signal = evaluateSmaCross(closes, strategy.params.fast ?? 5, strategy.params.slow ?? 20)
-    return NextResponse.json({ strategy, signal, code })
+    return NextResponse.json({ strategy, signal, supported: true, code })
   } catch (e: any) {
     return NextResponse.json({ error: String(e.message) }, { status: 502 })
   }
 }
 ```
 
-- [ ] **Step 2: 검증** — `curl -s localhost:3000/api/strategy -XPOST -H 'content-type: application/json' -d '{"url":"https://www.youtube.com/watch?v=bARF75QgOtM","code":"005930"}'` → strategy+signal JSON 확인
+- [ ] **Step 2: 검증** — 지원 영상(레퍼런스): `curl -s localhost:3000/api/strategy -XPOST -H 'content-type: application/json' -d '{"url":"https://www.youtube.com/watch?v=bARF75QgOtM","code":"005930"}'` → `supported:true` + signal 확인. 이어서 RSI/볼린저 등 다른 영상 URL로 호출 → `supported:false` + signal:null(요약·한계만) 확인.
 - [ ] **Step 3: 커밋** — `git commit -am "feat: 영상→내 전략 분석 파이프라인 API"`
 
 ---
@@ -569,7 +592,7 @@ export const SYSTEM_PROMPT = `너는 카카오페이증권의 AI 투자 코파�
 
 ```ts
 // src/lib/tools.ts
-import { getQuote } from './kis/client'
+import { getQuote } from './market'
 import { DEMO_PORTFOLIO, sectorWeights } from './portfolio'
 
 export const TOOLS = [
@@ -800,7 +823,9 @@ export function StrategyResult({ code }: { code: string }) {
         <div className="font-bold">📌 {data.strategy.name}</div>
         <div><b>진입:</b> {data.strategy.entryRules.join(' · ')}</div>
         <div><b>청산:</b> {data.strategy.exitRules.join(' · ')}</div>
-        <div className="bg-blue-50 p-2 rounded"><b>지금 {data.code} 신호:</b> {data.signal.signal} — {data.signal.reason}</div>
+        {data.supported
+          ? <div className="bg-blue-50 p-2 rounded"><b>지금 {data.code} 신호:</b> {data.signal.signal} — {data.signal.reason}</div>
+          : <div className="bg-gray-100 p-2 rounded text-gray-600">이 기법은 아직 <b>자동 신호 계산 미지원</b>이야(지원: 이동평균 교차 계열). 요약·한계만 제공할게 — 신호를 지어내지 않아.</div>}
         <div className="bg-amber-50 p-2 rounded"><b>⚠️ 이 기법의 한계:</b><ul className="list-disc ml-4">{data.strategy.assumptions.map((a:string,i:number)=><li key={i}>{a}</li>)}</ul></div>
         <button onClick={()=>saveCard({ title: data.strategy.name, body: JSON.stringify(data.strategy) })} className="text-blue-600 underline">📓 기법 카드로 내 위키에 저장</button>
       </div>)}
@@ -852,16 +877,17 @@ export function CommunityCard() {
 **Files:** Create: `src/app/components/Disclaimer.tsx`, `README.md`, `docs/PRD.md`, `docs/AI-활용.md`
 
 - [ ] **Step 1: 면책 고지** — 시트 하단에 "본 서비스는 투자 참고용이며 투자 자문이 아닙니다. 최종 결정은 사용자에게 있습니다." 상시 노출(`Disclaimer.tsx`)
-- [ ] **Step 2: `README.md`** — 실행법(.env.local 키 발급 방법: KIS 포털/Anthropic), `npm i && npm run dev`, 아키텍처 요약, 스크린샷.
+- [ ] **Step 2: `README.md`** — 실행법(.env.local: 토스증권 client_id/secret 발급법 또는 무계좌 `MARKET_PROVIDER=yahoo`, Anthropic 키), `npm i && npm run dev`, 아키텍처 요약, 스크린샷.
 - [ ] **Step 3: `docs/PRD.md`** — 스펙 기반 1~2p PRD (해결 문제/타겟/가설/검증지표 필수 + 차별화: 기존 증권봇·AI인사이트 대비 + 로드맵). 설계문서에서 축약.
 - [ ] **Step 4: `docs/AI-활용.md`** — Prototype 제작에 AI를 어떻게 썼는지(브레인스토밍→스펙→플랜→구현, Claude 도구사용 에이전트 설계).
-- [ ] **Step 5: 배포** — Vercel 연결, 환경변수(KIS/Anthropic 키) 설정, 배포 URL 확보. **주의:** KIS는 호출 IP 제한/모의계좌 정책 확인. 배포 후 `/api/quote` 동작 검증.
+- [ ] **Step 5: 배포** — Vercel 연결, 환경변수(토스 또는 yahoo, Anthropic 키) 설정, 배포 URL 확보. **주의:** 토스 API의 호출 IP 화이트리스트/요청 제한 정책 확인(서버리스 IP 이슈 시 `MARKET_PROVIDER=yahoo`로 데모). 배포 후 `/api/quote` 동작 검증.
 - [ ] **Step 6: 커밋 + 푸시(사용자 승인 후)** — `git commit -am "feat: 면책/문서/배포"` 후 사용자 확인하에 `git push origin main`
 
 ---
 
 ## Self-Review 결과
 
-- **Spec 커버리지:** 코파일럿 대화(Task 9,11) · 영상→내 전략(Task 5~7,12) · KIS 실시세(Task 4) · 개인위키 라이트(Task 12) · 커뮤니티 목업(Task 12) · 플로팅 진입점/화면맥락(Task 10,11) · 페르소나·원칙(Task 8) · 데모 포트폴리오(Task 8) · 면책/PRD/AI활용(Task 13) 모두 매핑됨. 로드맵 항목(백테스트·자동주문·코치·카톡 실연동)은 의도적으로 구현 제외(PRD 기술만).
-- **타입 일관성:** `evaluateSmaCross`/`Strategy`/`Holding`/`runTool` 명칭이 태스크 간 일치. 전략 `type`은 MVP에서 `sma_cross`만 지원(스키마·추출·평가 3곳 일치).
-- **미검증 리스크(실행 중 확인):** ① KIS tr_id/필드명(Task 4 Step4) ② 유튜브 자막 존재(Task 5 Step3 폴백) ③ Claude 모델 id는 실행 시점 최신으로 확인(`claude-api` 스킬 참고).
+- **Spec 커버리지:** 코파일럿 대화(Task 9,11) · 영상→내 전략(Task 5~7,12) · 실시세(토스 주+Yahoo 폴백, Task 4) · 개인위키 라이트(Task 12) · 커뮤니티 목업(Task 12) · 플로팅 진입점/화면맥락(Task 10,11) · 페르소나·원칙(Task 8) · 데모 포트폴리오(Task 8) · 면책/PRD/AI활용(Task 13) 모두 매핑됨. 로드맵 항목(백테스트·자동주문·코치·카톡 실연동)은 의도적으로 구현 제외(PRD 기술만).
+- **타입 일관성:** `evaluateSmaCross`/`Strategy`/`Holding`/`runTool`/`MarketData`/`getQuote`/`getDailyCloses` 명칭이 태스크 간 일치. 시세는 전부 `@/lib/market`에서 import(kis 잔재 없음). 전략 `type`은 `sma_cross`(신호 계산) | `unsupported`(요약·한계만) 2종을 스키마·추출·파이프라인·UI 4곳에서 일관 처리.
+- **정직 처리 확인:** 미지원 기법은 `/api/strategy`가 `signal:null, supported:false` 반환 → `StrategyResult`가 신호 대신 "미지원" 안내 렌더(신호 조작 없음).
+- **미검증 리스크(실행 중 확인):** ① 토스 엔드포인트 응답 필드명(Task 4 Step5, OpenAPI 스펙 대조) ② 유튜브 자막 존재(Task 5 Step3 폴백) ③ Yahoo 코스닥 심볼 `.KQ` 매핑 ④ Claude 모델 id는 실행 시점 최신으로 확인(`claude-api` 스킬 참고).
