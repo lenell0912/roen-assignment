@@ -1,8 +1,13 @@
+'use client'
+import { useState } from 'react'
+import { Doorway } from './components/Doorway'
+import { AgentApp } from './components/AgentApp'
+
 export default function Home() {
+  const [entered, setEntered] = useState(false)
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">AI 투자 코파일럿</h1>
-      <p className="mt-2 text-gray-600">스캐폴드 OK — 나만의 거래 프레임 강화 루프</p>
+    <main className="min-h-screen flex items-center justify-center p-4 bg-neutral-200">
+      {entered ? <AgentApp onExit={() => setEntered(false)} /> : <Doorway onEnter={() => setEntered(true)} />}
     </main>
   )
 }
