@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 
 // 진입 창구: 페이증권 앱 화면(스크린샷) + 플로팅 버튼. 스크린샷 없으면 폴백 UI.
 export function Doorway({ onEnter }: { onEnter: () => void }) {
@@ -32,9 +33,14 @@ export function Doorway({ onEnter }: { onEnter: () => void }) {
           <div className="flex-1 bg-red-500 text-white grid place-items-center font-semibold">구매</div>
         </div>
       </div>
-      <button onClick={onEnter} className="mt-1 text-sm text-blue-600 underline">
-        🧭 코파일럿 열기 (플로팅 버튼)
-      </button>
+      <div className="mt-1 flex items-center gap-3">
+        <button onClick={onEnter} className="text-sm text-blue-600 underline">
+          🧭 코파일럿 열기 (플로팅 버튼)
+        </button>
+        <Link href="/prd" className="text-sm font-semibold bg-[#fee500] px-3 py-1 rounded-full">
+          📄 기획서(PRD)
+        </Link>
+      </div>
     </div>
   )
 }

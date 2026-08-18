@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { Frame } from '@/lib/frame'
 import { loadFrame } from '@/lib/frameStore'
 import { ChatPage } from './ChatPage'
@@ -57,7 +58,10 @@ export function AgentApp({ onExit }: { onExit: () => void }) {
             </option>
           ))}
         </select>
-        <button onClick={onExit} className="ml-auto text-sm text-gray-500">
+        <Link href="/prd" className="ml-auto text-sm font-semibold bg-[#fee500] px-2.5 py-1 rounded-full">
+          📄 기획서(PRD)
+        </Link>
+        <button onClick={onExit} className="text-sm text-gray-500">
           ↩ 페이증권으로
         </button>
       </div>
