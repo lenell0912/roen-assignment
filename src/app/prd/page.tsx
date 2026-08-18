@@ -6,6 +6,7 @@ const KAKAO_FONT = '"Apple SD Gothic Neo", Pretendard, "Noto Sans KR", system-ui
 
 export default function PRD() {
   const [mode, setMode] = useState<'summary' | 'detail'>('summary')
+  const [active, setActive] = useState<string>('summary')
   const [pending, setPending] = useState<string | null>(null)
 
   useEffect(() => {
@@ -17,16 +18,18 @@ export default function PRD() {
 
   const goSection = (id: string) => {
     setMode('detail')
+    setActive(id)
     setPending(id)
   }
   const goSummary = () => {
     setMode('summary')
+    setActive('summary')
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
     <div style={{ fontFamily: KAKAO_FONT }} className="min-h-screen bg-[#f7f8fa] text-[#191919]">
-      <TopBar mode={mode} onSummary={goSummary} onSection={goSection} />
+      <TopBar active={active} onSummary={goSummary} onSection={goSection} />
       <Hero />
       {mode === 'summary' ? (
         // 요약 개요 = 핵심 PRD (과제 필수 + 테제). 1~2장 분량.
@@ -57,7 +60,7 @@ export default function PRD() {
   )
 }
 
-function TopBar({ mode, onSummary, onSection }: { mode: 'summary' | 'detail'; onSummary: () => void; onSection: (id: string) => void }) {
+function TopBar({ active, onSummary, onSection }: { active: string; onSummary: () => void; onSection: (id: string) => void }) {
   const sections: [string, string][] = [
     ['스코프', 'scope'],
     ['전략적합성', 'fit'],
@@ -68,31 +71,53 @@ function TopBar({ mode, onSummary, onSection }: { mode: 'summary' | 'detail'; on
   ]
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
-      <div className="max-w-3xl mx-auto px-5 h-12 flex items-center gap-3">
-        <span className="font-extrabold text-sm">PRD · AI 투자 코파일럿</span>
+      <div className="max-w-3xl mx-auto px-5 h-14 flex items-center gap-3">
+        <FrameLogo />
         <Link href="/" className="ml-auto text-sm font-semibold bg-[#fee500] px-3 py-1.5 rounded-full">
           프로토타입 열기 →
         </Link>
       </div>
-      <div className="max-w-3xl mx-auto px-5 flex items-center gap-1.5 overflow-x-auto pb-2 border-t">
-        <button
-          onClick={onSummary}
-          className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-bold ${mode === 'summary' ? 'bg-[#191919] text-white' : 'bg-[#f1f3f5] text-gray-600'}`}
-        >
-          요약 개요
-        </button>
-        <span className="w-px h-4 bg-gray-300 mx-1 shrink-0" aria-hidden />
-        {sections.map(([label, id]) => (
-          <button
-            key={id}
-            onClick={() => onSection(id)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-sm ${mode === 'detail' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-100'}`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="border-t">
+        <div className="max-w-3xl mx-auto px-5 flex items-center gap-5 overflow-x-auto">
+          <TabBtn label="요약 개요" active={active === 'summary'} onClick={onSummary} />
+          {sections.map(([label, id]) => (
+            <TabBtn key={id} label={label} active={active === id} onClick={() => onSection(id)} />
+          ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+        active ? 'border-[#191919] text-[#191919]' : 'border-transparent text-gray-400 hover:text-gray-700'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function FrameLogo() {
+  const [ok, setOk] = useState(false)
+  return (
+    <span className="flex items-center gap-2">
+      {!ok && (
+        <span className="inline-flex items-center font-extrabold text-[#16244a] text-lg" style={{ letterSpacing: '-0.03em' }}>
+          <span>[</span>
+          <span className="mx-1">
+            F<span className="text-[#2f6bff]">r</span>ame
+          </span>
+          <span>]</span>
+        </span>
+      )}
+      <img src="/frame-logo.png" alt="Frame" onLoad={() => setOk(true)} className={`h-7 ${ok ? 'block' : 'hidden'}`} />
+      <span className="text-xs text-gray-400 font-semibold">PRD</span>
+    </span>
   )
 }
 
@@ -136,14 +161,12 @@ function Hero() {
     <header className="bg-white border-b">
       <div className="max-w-3xl mx-auto px-5 py-14">
         <div className="text-xs font-bold text-[#c9a800]">카카오페이증권 · 프로덕트 빌더(시니어) 과제</div>
-        <h1 className="mt-3 text-3xl md:text-4xl font-extrabold leading-tight">
-          답을 주지 않는
-          <br />
-          투자 코파일럿
+        <h1 className="mt-3 text-3xl md:text-4xl font-extrabold leading-tight tracking-tight">
+          사용자와 성장하는 투자 에이전트, Frame
         </h1>
         <p className="mt-4 text-gray-600 text-[15px] leading-relaxed">
-          종목을 추천하는 AI는 많다. 우리는 <b>추천을 거부하고</b>, 너의 판단 기준(프레임)을{' '}
-          <b>너의 실제 결과로 진화시킨다.</b> 2030 초보가 남 따라 하지 않고, 스스로·근거 있게 결정하도록.
+          혼자 사고팔다 보면 &quot;내가 이걸 왜 샀지?&quot; 싶은 순간, 있으시죠. Frame은 정답을 대신 내려주지 않아요.
+          그저 곁에서 함께 들여다보며, 당신만의 투자 기준이 조금씩 단단해지도록 거들 뿐이에요.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           {['2030 초보·감투자자', '토스증권 오픈API 실연동', 'Claude Sonnet 에이전트', '탐색형 프로토타입'].map((c) => (
