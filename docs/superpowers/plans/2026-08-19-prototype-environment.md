@@ -615,7 +615,7 @@ git commit -m "feat(proto): 에이전트 도구 확장 — resolve_stock·update
 ```
 
 > **리뷰 후속(별도 커밋)**: 폴백 throw 시맨틱(NaN/빈배열)·fetch 타임아웃·Yahoo 코스닥(.KQ) 폴백·Yahoo 슬라이스·update_frame 정직 보고(rulesFromToolInput)·턴 내 프레임 갱신·에러/이름 새니타이즈 + `src/test/tools.test.ts`.
-> **의도적으로 미룸(프로토타입 스코프)**: 제공자 서킷브레이커/다운 메모이제이션, 토큰 in-flight dedupe, update_frame check의 oneOf JSON 스키마 재구성, 데이터 소스 마커(source 필드), max_tokens 트렁케이션 감지. 필요 시 Phase 2.
+> **의도적으로 미룸(프로토타입 스코프)**: 제공자 서킷브레이커/다운 메모이제이션, 토큰 in-flight dedupe, update_frame check의 oneOf JSON 스키마 재구성, 데이터 소스 마커(source 필드), max_tokens 트렁케이션 감지, checksDropped 신호(check만 벗겨진 규칙 수), client 발 `frame.rules[].text`의 시스템 프롬프트 인젝션(셀프-인젝션 한정·미인증 요청바디 클래스). 필요 시 Phase 2.
 
 ---
 
