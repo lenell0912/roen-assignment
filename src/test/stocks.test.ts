@@ -27,4 +27,16 @@ describe('searchStocks', () => {
     const codes = STOCKS.map((s) => s.code)
     expect(new Set(codes).size).toBe(codes.length)
   })
+  it('별칭은 서로 겹치지 않고, 다른 종목의 이름과도 겹치지 않는다', () => {
+    const names = new Set(STOCKS.map((s) => s.name.toLowerCase().replace(/\s+/g, '')))
+    const seen = new Set<string>()
+    for (const s of STOCKS) {
+      for (const a of s.aliases ?? []) {
+        const n = a.toLowerCase().replace(/\s+/g, '')
+        expect(seen.has(n)).toBe(false)
+        expect(names.has(n)).toBe(false)
+        seen.add(n)
+      }
+    }
+  })
 })

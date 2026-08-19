@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evaluateCheck, EvalContext, rulesFromToolInput } from '../lib/frame'
+import { evaluateCheck, EvalContext, rulesFromToolInput, MachineCheck } from '../lib/frame'
 import { Candle } from '../lib/market/types'
 
 function candles(closes: number[]): Candle[] {
@@ -54,6 +54,7 @@ describe('rulesFromToolInput', () => {
     })
     expect(rules).toHaveLength(2)
     expect(rules[0].id).toBeTruthy()
+    expect(rules[0].id).not.toBe(rules[1].id)
     expect(rules[0].check).toMatchObject({ type: 'sma_cross' })
     expect(rules[1].check).toBeUndefined()
   })
@@ -68,6 +69,21 @@ describe('rulesFromToolInput', () => {
     expect(rules).toHaveLength(1)
     expect(rules[0].text).toBe('쏠림 방지')
     expect(rules[0].check).toBeUndefined()
+  })
+  it('check 페이로드에 필드가 빠지면 check만 제거하고(서술형으로), 필드가 온전하면 통과시킨다', () => {
+    const rules = rulesFromToolInput({
+      rules: [
+        { kind: 'buy', text: 'x', check: { type: 'price_vs_high' } }, // 필드 누락 → check 제거
+        { kind: 'buy', text: 'y', check: { type: 'price_vs_high', window: 60, minPctBelowHigh: 10 } },
+        { kind: 'sell', text: 'z', check: { type: 'sma_cross', fast: 5, slow: 20 } },
+        { kind: 'risk', text: 'w', check: { type: 'sector_concentration', maxPct: 40 } },
+      ],
+    })
+    expect(rules).toHaveLength(4)
+    expect(rules[0].check).toBeUndefined()
+    expect(rules[1].check).toEqual<MachineCheck>({ type: 'price_vs_high', window: 60, minPctBelowHigh: 10 })
+    expect(rules[2].check).toEqual<MachineCheck>({ type: 'sma_cross', fast: 5, slow: 20 })
+    expect(rules[3].check).toEqual<MachineCheck>({ type: 'sector_concentration', maxPct: 40 })
   })
   it('입력이 이상하면 빈 배열', () => {
     expect(rulesFromToolInput(null)).toEqual([])

@@ -56,7 +56,7 @@ export const STOCKS: StockInfo[] = [
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
-/** 이름/별칭/코드로 종목 검색. 정확 일치 > 접두 일치 > 포함 > 별칭 순으로 랭킹. */
+/** 이름/별칭/코드로 종목 검색. 정확 이름 > 정확 별칭 > 이름 접두 > 이름 포함 > 별칭 포함 순으로 랭킹. */
 export function searchStocks(query: string, limit = 8): StockInfo[] {
   const q = norm(query)
   if (!q) return []

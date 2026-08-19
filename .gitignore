@@ -32,3 +32,6 @@ venv/
 
 # next-env
 next-env.d.ts
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

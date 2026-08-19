@@ -92,7 +92,26 @@ export const EXAMPLE_FRAME: Frame = {
 
 // ── 대화(update_frame 도구) 입력 → 안전한 Rule[] 정제 ──
 const RULE_KINDS: RuleKind[] = ['buy', 'sell', 'risk']
-const CHECK_TYPES = ['sma_cross', 'price_vs_high', 'sector_concentration']
+
+/** check.type만 보고 통과시키지 않는다 — 필드가 빠진 payload는 평가 시 undefined가 섞여
+ *  "위반 — 한도 undefined%" 같은 영구 오검출을 만든다. 변형별로 필요한 필드를 전부 검증한다. */
+function parseCheck(raw: any): MachineCheck | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  switch (raw.type) {
+    case 'sma_cross':
+      return typeof raw.fast === 'number' && typeof raw.slow === 'number'
+        ? { type: 'sma_cross', fast: raw.fast, slow: raw.slow }
+        : undefined
+    case 'price_vs_high':
+      return typeof raw.window === 'number' && typeof raw.minPctBelowHigh === 'number'
+        ? { type: 'price_vs_high', window: raw.window, minPctBelowHigh: raw.minPctBelowHigh }
+        : undefined
+    case 'sector_concentration':
+      return typeof raw.maxPct === 'number' ? { type: 'sector_concentration', maxPct: raw.maxPct } : undefined
+    default:
+      return undefined
+  }
+}
 
 export function rulesFromToolInput(input: any): Rule[] {
   const arr = Array.isArray(input?.rules) ? input.rules : []
@@ -102,6 +121,6 @@ export function rulesFromToolInput(input: any): Rule[] {
       id: `r${Date.now()}_${i}`,
       kind: r.kind as RuleKind,
       text: r.text.trim(),
-      check: r.check && CHECK_TYPES.includes(r.check.type) ? (r.check as MachineCheck) : undefined,
+      check: parseCheck(r.check),
     }))
 }

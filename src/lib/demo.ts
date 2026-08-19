@@ -1,3 +1,4 @@
+'use client'
 // 데모(도슨트) 진행 상태 — 프레임 안 제품이 markStep을 쏘고, 프레임 밖 패널이 구독한다.
 import { resetFrame } from './frameStore'
 import { clearRecords } from './records'
@@ -47,7 +48,7 @@ export const DEMO_STEPS: DemoStep[] = [
 
 export type DemoProgress = Partial<Record<DemoStepId, boolean>>
 
-/** 다음 안내 스텝: 본 스텝 먼저, 다 되면 보너스, 전부 완료면 null */
+/** 다음 안내 스텝(전부 완료면 null). bonus 스텝이 배열 마지막이라는 전제(테스트로 고정)에 의존한다. */
 export function nextStep(progress: DemoProgress): DemoStep | null {
   return DEMO_STEPS.find((s) => !progress[s.id]) ?? null
 }
@@ -58,7 +59,8 @@ export const DEMO_EVENT = 'demo:update'
 export function loadProgress(): DemoProgress {
   if (typeof window === 'undefined') return {}
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '{}') as DemoProgress
+    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}')
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as DemoProgress) : {}
   } catch {
     return {}
   }
