@@ -2,7 +2,9 @@
 import { useState } from 'react'
 
 export function HomeScreen({ onSearch, pulseSearch }: { onSearch: () => void; pulseSearch?: boolean }) {
-  const [hasShot, setHasShot] = useState(true)
+  // 폴백 홈을 기본으로 렌더하고, home.png가 실제로 로드되면(onLoad) 그때 덮는다.
+  // (기본 true + onError 방식은 하이드레이션 전에 이미지가 404나면 에러 이벤트를 놓쳐 홈이 빈 화면이 됨)
+  const [hasShot, setHasShot] = useState(false)
   return (
     <div className="absolute inset-0 bg-[#f7f8fa]">
       {!hasShot && <FallbackHome onSearch={onSearch} pulseSearch={pulseSearch} />}
@@ -10,7 +12,7 @@ export function HomeScreen({ onSearch, pulseSearch }: { onSearch: () => void; pu
       <img
         src="/screens/home.png"
         alt=""
-        onError={() => setHasShot(false)}
+        onLoad={() => setHasShot(true)}
         className={hasShot ? 'absolute inset-0 w-full h-full object-cover object-top' : 'hidden'}
       />
       {hasShot && (

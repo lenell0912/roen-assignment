@@ -14,11 +14,14 @@ export function useDemoProgress(): DemoProgress {
   return p
 }
 
-// 시세 제공자 배지는 설정값이 아니라 실제 연결 상태(/api/health의 tossLive)를 보여준다 — 토스 연동 어필 + 정직성
-function providerBadge(tossLive: boolean | null): string {
-  if (tossLive === null) return '시세·차트 — 제공자 연결 확인 중…'
-  if (tossLive) return '시세·차트 — 토스증권 오픈API 실호출 중'
-  return '시세·차트 — 토스는 서버 IP 정책으로 차단 → Yahoo 자동 폴백 중 (토스 연동은 코드·로컬 실호출 검증 완료)'
+// 배지는 '실제로 시세를 서빙하는 제공자'(/api/health의 provider)를 정직하게 표기한다.
+// provider=toss일 때만 tossLive로 실호출/폴백을 가르고, provider=yahoo면 Yahoo가 서빙 중임을 밝힌다.
+function providerBadge(provider: string | null, tossLive: boolean | null): string {
+  if (provider === null || tossLive === null) return '시세·차트 — 제공자 연결 확인 중…'
+  if (provider === 'yahoo') return '시세·차트 — Yahoo Finance 실호출 중 (토스 연동은 코드·로컬 실호출 검증 완료)'
+  return tossLive
+    ? '시세·차트 — 토스증권 오픈API 실호출 중'
+    : '시세·차트 — 토스는 서버 IP 정책으로 차단 → Yahoo 자동 폴백 중 (토스 연동은 코드·로컬 실호출 검증 완료)'
 }
 
 const STATIC_BADGES: { label: string; kind: 'live' | 'mock' }[] = [
@@ -31,15 +34,15 @@ export function DocentPanel() {
   const progress = useDemoProgress()
   const next = nextStep(progress)
   const done = DEMO_STEPS.filter((s) => progress[s.id]).length
-  const [tossLive, setTossLive] = useState<boolean | null>(null)
+  const [health, setHealth] = useState<{ provider: string | null; tossLive: boolean | null }>({ provider: null, tossLive: null })
   useEffect(() => {
     fetch('/api/health')
       .then((r) => r.json())
-      .then((j) => setTossLive(!!j.tossLive))
-      .catch(() => setTossLive(false))
+      .then((j) => setHealth({ provider: j.provider ?? null, tossLive: !!j.tossLive }))
+      .catch(() => setHealth({ provider: null, tossLive: false }))
   }, [])
   const BADGES: { label: string; kind: 'live' | 'mock' }[] = [
-    { label: providerBadge(tossLive), kind: 'live' },
+    { label: providerBadge(health.provider, health.tossLive), kind: 'live' },
     ...STATIC_BADGES,
   ]
 
