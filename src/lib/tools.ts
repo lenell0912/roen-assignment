@@ -1,7 +1,9 @@
 import { getQuote } from './market'
 import { getPortfolio, compareToFrame, runBacktest } from './capabilities'
-import { Frame } from './frame'
+import { Frame, rulesFromToolInput } from './frame'
 import { searchStocks } from './stocks'
+
+const hasFrame = (f?: Frame) => !!f && f.rules.length > 0
 
 export const TOOLS = [
   {
@@ -63,25 +65,34 @@ export const TOOLS = [
   },
 ] as const
 
-export async function runTool(name: string, input: any, ctx: { frame?: Frame }): Promise<any> {
+export async function runTool(
+  name: string,
+  input: any,
+  ctx: { frame?: Frame; setFrame?: (f: Frame) => void },
+): Promise<any> {
   switch (name) {
     case 'resolve_stock':
-      return { matches: searchStocks(input.query, 5) }
+      return { matches: searchStocks(String(input?.query ?? ''), 5) }
     case 'get_quote':
-      return await getQuote(input.code)
+      return await getQuote(String(input?.code ?? ''))
     case 'get_portfolio':
       return getPortfolio()
     case 'compare_to_frame':
-      if (!ctx.frame || ctx.frame.rules.length === 0)
+      if (!hasFrame(ctx.frame))
         return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 대조 대신 팩트 브리핑(get_quote)을 하고, 원칙부터 만들자고 제안해라.' }
-      return await compareToFrame(input.code, ctx.frame)
+      return await compareToFrame(String(input?.code ?? ''), ctx.frame)
     case 'run_backtest':
-      if (!ctx.frame || ctx.frame.rules.length === 0)
+      if (!hasFrame(ctx.frame))
         return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 원칙부터 만들자고 제안해라.' }
-      return await runBacktest(input.code, ctx.frame)
-    case 'update_frame':
-      // 저장 자체는 클라이언트가 한다(localStorage). 여기선 입력을 그대로 인정.
-      return { saved: true, count: Array.isArray(input?.rules) ? input.rules.length : 0 }
+      return await runBacktest(String(input?.code ?? ''), ctx.frame)
+    case 'update_frame': {
+      // 저장 자체는 클라이언트가 한다(localStorage). 서버는 실제로 반영될 정제본 기준으로 정직하게 보고한다.
+      const rules = rulesFromToolInput(input)
+      const checksApplied = rules.filter((r) => r.check).length
+      const dropped = (Array.isArray(input?.rules) ? input.rules.length : 0) - rules.length
+      if (rules.length && ctx.setFrame) ctx.setFrame({ rules, updatedAt: new Date().toISOString() })
+      return { saved: rules.length > 0, count: rules.length, checksApplied, dropped }
+    }
     default:
       throw new Error(`unknown tool ${name}`)
   }

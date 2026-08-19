@@ -16,6 +16,7 @@ async function token(): Promise<string> {
       'content-type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=client_credentials',
+    signal: AbortSignal.timeout(3500),
   })
   if (!res.ok) throw new Error(`Toss token failed: ${res.status} ${await res.text()}`)
   const j = await res.json()
@@ -24,7 +25,10 @@ async function token(): Promise<string> {
 }
 
 async function authGet(path: string): Promise<any> {
-  const res = await fetch(`${BASE}${path}`, { headers: { authorization: `Bearer ${await token()}` } })
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { authorization: `Bearer ${await token()}` },
+    signal: AbortSignal.timeout(3500),
+  })
   if (!res.ok) throw new Error(`Toss GET ${path} failed: ${res.status}`)
   return res.json()
 }
@@ -33,6 +37,7 @@ export const tossProvider: MarketData = {
   async getQuote(code: string): Promise<Quote> {
     const j = await authGet(`/api/v1/prices?symbols=${code}`)
     const price = Number(j.result?.[0]?.lastPrice)
+    if (!Number.isFinite(price) || price <= 0) throw new Error('Toss quote invalid')
     // prices 응답엔 등락률이 없어 최근 2 일봉으로 계산
     let changeRate = 0
     try {
@@ -48,9 +53,11 @@ export const tossProvider: MarketData = {
     const j = await authGet(`/api/v1/candles?symbol=${code}&interval=1d&count=${count}`)
     const rows: any[] = j.result?.candles ?? []
     // 응답은 최신→과거 → 과거→최신으로 뒤집음
-    return rows
+    const out = rows
       .map((r) => ({ date: String(r.timestamp).slice(0, 10), close: Number(r.closePrice) }))
       .filter((c) => !isNaN(c.close))
       .reverse()
+    if (out.length === 0) throw new Error('Toss candles empty')
+    return out
   },
 }
