@@ -8,6 +8,7 @@ import { Fab } from './Fab'
 import { HomeScreen } from './HomeScreen'
 import { SearchScreen } from './SearchScreen'
 import { StockScreen } from './StockScreen'
+import { MiniApp } from './MiniApp'
 
 export type Screen = { kind: 'home' } | { kind: 'search' } | { kind: 'stock'; code: string; name: string }
 export type AgentCtx = { code?: string; name?: string }
@@ -41,8 +42,16 @@ export function DemoStage() {
         {screen.kind === 'stock' && (
           <StockScreen code={screen.code} name={screen.name} onBack={() => setScreen({ kind: 'search' })} />
         )}
-        {screen.kind !== 'search' && (
+        {screen.kind !== 'search' && agentCtx === null && (
           <Fab onClick={() => openAgent(screen.kind === 'stock' ? { code: screen.code, name: screen.name } : {})} />
+        )}
+        {agentCtx !== null && (
+          <MiniApp
+            context={agentCtx}
+            frame={frame}
+            onFrameChange={setFrame}
+            onClose={() => setAgentCtx(null)}
+          />
         )}
       </PhoneFrame>
       {/* 도슨트 패널 자리 — Task 9 */}
