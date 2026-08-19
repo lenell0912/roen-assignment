@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 
 const KAKAO_FONT = '"Apple SD Gothic Neo", Pretendard, "Noto Sans KR", system-ui, sans-serif'
 
@@ -56,41 +56,6 @@ function FrameLogo() {
   )
 }
 
-function Summary({ onDetail }: { onDetail: () => void }) {
-  const rows: [string, ReactNode][] = [
-    ['문제', <>정보는 넘치는데 <b>스스로 판단이 안 된다</b> — 거래 프레임(판단 기준)과 피드백 루프의 부재. 그 결과 쏠림·추격매수·뇌동매매로 실패한다.</>],
-    ['타겟', <>2030 초보 + 감으로 투자하는 사람</>],
-    ['해결', <><b>&quot;나만의 거래 프레임&quot;</b>을 만들고·지키고·다듬는 루프(형성→결정→기록→회고·진화). 답을 주지 않고 판단을 보완하는 코파일럿.</>],
-    ['새로움', <>추천을 거부하는 AI + 결정 직전 개입 + <b>프레임이 내 결과로 스스로 진화.</b></>],
-    ['가설', <>프레임 대조 → 근거 있는 결정↑ · 기록·되먹임 → 판단력 성장 · 프레임 → 감정매매↓</>],
-    ['검증 지표', <>NSM: 프레임에 근거한 결정 비율 · 위반 경고 시 보류율 · 회고/진화 횟수 · WAU</>],
-    ['차별화', <>증권봇·AI인사이트가 &quot;답&quot;을 줄 때, 우리는 <b>판단력을 키운다.</b></>],
-  ]
-  return (
-    <section className="pt-8">
-      <div className="text-xs text-gray-400 mb-3">요약 개요 · 30초 · 상세는 위 탭에서</div>
-      <Card>
-        <div className="divide-y">
-          {rows.map(([label, node]) => (
-            <div key={label} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-              <span className="shrink-0 w-16 text-xs font-bold text-[#b8a500] pt-0.5">{label}</span>
-              <div className="text-sm text-gray-700 leading-relaxed">{node}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-      <div className="mt-4 flex gap-2">
-        <button onClick={onDetail} className="bg-[#191919] text-white px-4 py-2 rounded-full text-sm font-semibold">
-          상세 PRD 보기 →
-        </button>
-        <Link href="/" className="px-4 py-2 rounded-full text-sm font-semibold text-gray-600 bg-[#f1f3f5]">
-          프로토타입 열기
-        </Link>
-      </div>
-    </section>
-  )
-}
-
 function Hero() {
   return (
     <header className="bg-white">
@@ -102,6 +67,7 @@ function Hero() {
         <p className="mt-4 text-gray-600 text-[15px] leading-relaxed">
           혼자 사고팔다 보면 &quot;내가 이걸 왜 샀지?&quot; 싶은 순간을 Frame이 기록하고 같이 고민합니다. 투자 동반자로서
           사용자의 곁에서 함께, 더 좋은 투자를 할 수 있도록 사용자만의 투자 기준과 매매 가치관을 조금씩 단단하게 만들어갑니다.
+          이렇게 쌓인 판단 기록과 프레임은 시간이 지날수록 나에게만 맞춰진 자산이 되어, 오래 쓸수록 더 단단해집니다.
           <br />
           Frame과 함께 더 이상 감으로 투자하지 말고, 나만의 투자 기법을 만들 수 있습니다.
         </p>
@@ -189,17 +155,17 @@ function Target() {
         <Card>
           <div className="font-bold">Who</div>
           <ul className="mt-2 text-sm text-gray-600 space-y-1 list-disc ml-4">
-            <li>모바일 네이티브, 유튜브로 투자 학습</li>
-            <li>커뮤니티 활동 활발, 소액·잦은 매매</li>
-            <li>자기만의 판단 기준이 아직 없음</li>
+            <li>모바일에 익숙하고, 유튜브로 투자를 학습합니다</li>
+            <li>커뮤니티 활동이 활발하고, 소액으로 자주 매매합니다</li>
+            <li>아직 자기만의 판단 기준이 없습니다</li>
           </ul>
         </Card>
         <Card>
           <div className="font-bold">Why</div>
           <ul className="mt-2 text-sm text-gray-600 space-y-1 list-disc ml-4">
-            <li>재테크가 가장 절실한 세대</li>
-            <li>정보를 다루는 것이 익숙한 세대</li>
-            <li>AI를 가장 잘 활용하는 세대</li>
+            <li>재테크가 가장 절실한 세대입니다</li>
+            <li>정보를 다루는 데 익숙한 세대입니다</li>
+            <li>AI를 가장 잘 활용하는 세대입니다</li>
           </ul>
         </Card>
       </div>
@@ -209,12 +175,12 @@ function Target() {
 
 function Solution() {
   const stages = [
-    { k: '① 형성', t: '프레임 형성', d: '대화로 나의 매매 규칙을 끌어내 저장. AI는 답을 주지 않고 되묻는다.' },
-    { k: '② 결정', t: '결정 순간 (히어로)', d: '아무 종목의 실시간·과거 데이터로 내 프레임에 대조 + 반대근거. 부합/위반을 짚되 결정은 사용자.' },
-    { k: '③ 기록', t: '판단 기록', d: '그때의 근거를 자동 저장(개인 llm 위키이자 컨텍스트 레이어). 운/실력 분리의 원천.' },
-    { k: '④ 회고', t: '과거 대입 + 진화', d: '내 프레임을 과거 데이터에 백테스트하고, 규칙별 엣지를 채점해 프레임을 진화시킨다.' },
+    { k: '① 형성', t: '프레임 형성', d: '대화로 사용자의 매매 규칙을 끌어내 저장합니다. AI는 답을 드리지 않고 되묻습니다.' },
+    { k: '② 결정', t: '결정 순간 (히어로)', d: '아무 종목의 실시간·과거 데이터로 사용자의 프레임에 대조하고 반대 근거를 제시합니다. 부합·위반을 짚되, 결정은 사용자가 합니다.' },
+    { k: '③ 기록', t: '판단 기록', d: '그때의 근거를 개인 LLM 위키이자 컨텍스트 레이어로 자동 저장합니다. 운과 실력을 분리하는 원천이 됩니다.' },
+    { k: '④ 회고', t: '과거 대입 + 진화', d: '사용자의 프레임을 과거 데이터에 백테스트하고, 규칙별 엣지를 채점해 프레임을 진화시킵니다.' },
   ]
-  const [i, setI] = useState(1)
+  const [i, setI] = useState(0)
   return (
     <section className="space-y-4">
       <H2 id="solution" kicker="Solution · 해결 방식" title="나만의 거래 프레임 강화 루프" />
@@ -222,9 +188,9 @@ function Solution() {
         <div className="text-xs font-extrabold mb-3">해결 원칙 (고정)</div>
         <div className="grid sm:grid-cols-3 gap-2">
           {[
-            ['① 답을 주지 않는다', '프레임을 끌어내고·대조하고·되먹인다'],
-            ['② 항상 내 맥락 근거', '내 데이터·내 규칙 기반으로만'],
-            ['③ 결정·실행은 사용자', 'human-in-the-loop'],
+            ['① 답을 드리지 않습니다', '프레임을 끌어내고 대조하고 되먹입니다'],
+            ['② 항상 사용자 맥락에 근거합니다', '사용자의 데이터·규칙만을 근거로 합니다'],
+            ['③ 결정·실행은 사용자입니다', 'human-in-the-loop'],
           ].map(([t, d]) => (
             <div key={t} className="rounded-xl bg-white p-3">
               <div className="text-sm font-bold">{t}</div>
@@ -258,9 +224,9 @@ function Novelty() {
       <H2 id="novelty" kicker="Novelty · 무엇이 새로운가" title="기능이 아닌 목표" />
       <div className="grid md:grid-cols-3 gap-3">
         {[
-          ['입장', '"답을 거부하는 AI"', '모두가 시그널·예측을 줄 때, 우리는 일부러 답을 안 주고 판단력을 키운다.'],
-          ['개입 순간', '결정 직전, 앱 안', '구매 버튼 누르기 직전 페이증권 안에서 사용자 규칙을 실데이터로 들이댄다.'],
-          ['루프', '프레임의 자기 진화', '사용자 규칙을 사용자 결과로 채점해 규칙을 데이터로 개정한다.'],
+          ['입장', '"답을 거부하는 AI"', '모두가 시그널·예측을 줄 때, Frame은 일부러 답을 드리지 않고 판단력을 키웁니다.'],
+          ['개입 순간', '결정 직전, 앱 안', '구매 버튼을 누르기 직전, 페이증권 안에서 사용자의 규칙을 실데이터로 대조합니다.'],
+          ['루프', '프레임의 자기 진화', '사용자의 규칙을 사용자의 결과로 채점해, 규칙을 데이터로 개정합니다.'],
         ].map(([k, t, d]) => (
           <Card key={t}>
             <div className="text-xs font-bold text-[#c9a800]">{k}</div>
@@ -269,14 +235,13 @@ function Novelty() {
           </Card>
         ))}
       </div>
-      <div className="bg-white border border-gray-200 text-[#191919] rounded-2xl p-5">
-        <div className="text-xs font-extrabold">실제 동작 예 · 프레임 진화</div>
-        <div className="mt-2 text-sm leading-relaxed">
-          삼성전자에서 규칙을 채점하니 — <b>정배열</b> 규칙은 엣지 <span className="font-bold text-emerald-700">+4.8%p</span>(유지),{' '}
-          <b>고점회피</b> 규칙은 <span className="font-bold text-red-600">−13.3%p</span>로 오히려 손해. Frame 에이전트가 &quot;고점회피 10%→5%로 완화&quot;를 데이터 근거로 제안하고, 한 번 누르면 프레임이 스스로 수정된다.{' '}
-          <span className="text-[#191919]/60">(과최적화 경고 포함)</span>
+      <Card>
+        <div className="text-xs font-bold text-[#c9a800]">복리</div>
+        <div className="mt-1 font-bold">쓸수록 대체 불가능한 데이터 해자</div>
+        <div className="mt-1 text-sm text-gray-600">
+          프레임·판단 기록이 쌓일수록 개인화가 깊어지고, 프레임이 사용자의 결과로 스스로 진화합니다. 사용자 본인이 쌓은 맥락이라, 경쟁사가 복제할 수 없는 스위칭 코스트가 됩니다.
         </div>
-      </div>
+      </Card>
     </section>
   )
 }
@@ -287,9 +252,9 @@ function Hypotheses() {
       <H2 id="hypo" kicker="Hypothesis & Metrics · 가설과 검증 지표" title="가설과 검증 지표" />
       <div className="grid md:grid-cols-3 gap-3">
         {[
-          ['H1', '결정 순간 "내 프레임"에 대조시키면 근거 있는 결정이 늘고 뇌동·추격매수가 준다.'],
-          ['H2', '판단을 기록하고 결과와 되먹이면(회고·진화) 운/실력이 분리되어 판단력이 자란다.'],
-          ['H3', '프레임이 생기면 감정 매매(FOMO·패닉)가 줄어들고 수익 또한 기존대비 우상향 할 것이다.'],
+          ['H1', '결정 순간 "내 프레임"에 대조시키면, 근거 있는 결정이 늘고 뇌동·추격매수가 줄어듭니다.'],
+          ['H2', '판단을 기록하고 결과와 되먹이면(회고·진화), 운과 실력이 분리되어 판단력이 자랍니다.'],
+          ['H3', '프레임이 생기면 감정 매매(FOMO·패닉)가 줄고, 근거 있는 결정이 늘어 판단의 질이 좋아집니다.'],
         ].map(([h, d]) => (
           <Card key={h}>
             <div className="font-extrabold text-[#c9a800]">{h}</div>
@@ -330,17 +295,17 @@ function Differentiation() {
         <Card>
           <div className="font-bold text-gray-500">기존 (증권봇 · AI인사이트)</div>
           <ul className="mt-2 text-sm text-gray-500 space-y-1 list-disc ml-4">
-            <li>Q&A · 정보 제공 · 시그널/예측</li>
-            <li>답을 준다 → 판단을 대신함</li>
-            <li>사후 매매일지 / 사전 스크리너 / 별개 챗봇으로 분절</li>
+            <li>Q&A·정보 제공·시그널/예측에 머무릅니다</li>
+            <li>답을 주고, 사용자의 판단을 대신합니다</li>
+            <li>사후 매매일지·사전 스크리너·별개 챗봇으로 분절되어 있습니다</li>
           </ul>
         </Card>
         <Card className="!bg-[#191919]">
           <div className="font-bold text-white">우리 (Frame 에이전트)</div>
           <ul className="mt-2 text-sm text-gray-300 space-y-1 list-disc ml-4">
-            <li>판단 프레임을 키운다 → 판단력 성장</li>
-            <li>답을 거부, 결정 직전 개입</li>
-            <li>형성→결정→기록→진화를 하나의 프레임으로 관통</li>
+            <li>판단 프레임을 키워 판단력을 성장시킵니다</li>
+            <li>답을 거부하고, 결정 직전에 개입합니다</li>
+            <li>형성→결정→기록→진화를 하나의 프레임으로 관통합니다</li>
           </ul>
         </Card>
       </div>
@@ -403,23 +368,23 @@ function Roadmap() {
 function AiUsage() {
   return (
     <section className="space-y-4">
-      <H2 id="ai" kicker="How we used AI · AI 활용" title="AI로 어떻게 만들었나" />
+      <H2 id="ai" kicker="How we used AI · AI 활용" title="AI로 어떻게 만들었나요" />
       <Card>
         <ul className="text-sm text-gray-600 space-y-1.5 list-disc ml-4">
           <li>
-            <b>기획</b>: Claude와 브레인스토밍→스펙→구현계획을 반복하며 문제 정의를 프레임 부재까지 파고듦.
+            <b>기획</b>: Claude와 브레인스토밍→스펙→구현계획을 반복하며, 문제 정의를 프레임 부재까지 파고들었습니다.
           </li>
           <li>
-            <b>제품 자체가 에이전트</b>: Claude Sonnet + 도구(시세·프레임 대조·백테스트)로 human-in-the-loop 에이전트 구현.
+            <b>제품 자체가 에이전트</b>: Claude Sonnet과 도구(시세·프레임 대조·백테스트)로 human-in-the-loop 에이전트를 구현했습니다.
           </li>
           <li>
-            <b>신뢰 설계</b>: LLM은 "이해·추출·제안"만, 신호·엣지 계산은 결정론적 코드로 분리(환각 방지, 검증 가능).
+            <b>신뢰 설계</b>: LLM은 "이해·추출·제안"만 맡고, 신호·엣지 계산은 결정론적 코드로 분리했습니다 (환각 방지·검증 가능).
           </li>
           <li>
-            <b>구현</b>: Next.js로 스캐폴드→실데이터 연동→에이전트→미니앱 페이지까지 AI 페어로 개발, TDD로 코어 검증.
+            <b>구현</b>: Next.js로 스캐폴드→실데이터 연동→에이전트→미니앱 페이지까지 AI 페어로 개발하고, TDD로 코어를 검증했습니다.
           </li>
           <li>
-            <b>로고</b>: 힉스필드(Higgsfield) MCP를 활용하여 브랜드 로고 이미지 생성.
+            <b>로고</b>: 힉스필드(Higgsfield) MCP를 활용해 브랜드 로고 이미지를 생성했습니다.
           </li>
         </ul>
       </Card>
@@ -429,10 +394,10 @@ function AiUsage() {
 
 function Scenario() {
   const steps = [
-    ['① 투자 에이전트 프레임과 대화', '대화로 "난 왜 사고, 언제 파나"를 끌어냄 → 규칙 3개 저장. 투자 시점을 단언하기 보다는 사용자의 판단을 지원하고 평가해줌.'],
-    ['② 결정 순간', '삼성전자 사려는데, 프레임 에이전트가 "2차전지 이미 62% — 쏠림" 위반을 짚음. 지훈은 보류.'],
-    ['③ 기록', '"오늘은 감정이었다"를 근거로 남김. 나중에 운/실력을 가릴 씨앗.'],
-    ['④ 회고·진화', '한 달 뒤, "고점회피 규칙이 오히려 −13%p 손해"를 데이터로 확인 → 규칙을 완화.'],
+    ['① 투자 에이전트 프레임과 대화', '대화로 "왜 사고, 언제 파는가"를 끌어내 규칙 3개를 저장합니다. 투자 시점을 단언하기보다, 사용자의 판단을 지원하고 평가합니다.'],
+    ['② 결정 순간', '삼성전자를 사려 할 때, 프레임 에이전트가 "반도체 비중이 이미 62% — 쏠림" 위반을 짚습니다. 지훈은 매수를 보류합니다.'],
+    ['③ 기록', '"오늘은 감정적이었다"를 근거로 남깁니다. 나중에 운과 실력을 가릴 씨앗이 됩니다.'],
+    ['④ 회고·진화', '한 달 뒤, "고점회피 규칙이 오히려 −13%p 손해"임을 데이터로 확인하고 규칙을 완화합니다.'],
   ]
   return (
     <section className="space-y-4">
@@ -442,7 +407,7 @@ function Scenario() {
           <span className="text-[11px] font-extrabold tracking-wide text-white bg-red-500 px-2 py-0.5 rounded-full">BEFORE</span>
         </div>
         <div className="text-sm font-medium text-red-900">
-          유튜브 보고 고점에 샀는데 왜 샀는지 설명 못 함. 커뮤니티 보며 불안, 손절·물타기 반복. 다음에도 똑같이.
+          유튜브를 보고 고점에 샀지만, 왜 샀는지 설명하지 못합니다. 커뮤니티를 보며 불안해하고, 손절과 물타기를 반복합니다. 다음에도 똑같습니다.
         </div>
       </div>
       <FlowArrow />
@@ -463,7 +428,7 @@ function Scenario() {
           <span className="text-[11px] font-extrabold tracking-wide text-white bg-emerald-600 px-2 py-0.5 rounded-full">AFTER</span>
         </div>
         <div className="text-sm font-medium text-emerald-900">
-          남 따라가 아니라 <b>자기 기준</b>으로 결정하고, 그 판단이 데이터로 쌓여 <b>점점 나아진다.</b>
+          남을 따라가지 않고 <b>자기 기준</b>으로 결정하며, 그 판단이 데이터로 쌓여 <b>점점 나아집니다.</b>
         </div>
       </div>
     </section>
@@ -473,24 +438,24 @@ function Scenario() {
 function Goals() {
   return (
     <section className="space-y-4">
-      <H2 id="goals" kicker="Goals & Non-goals · 목표와 비목표" title="무엇을 하고, 무엇을 안 하나" />
+      <H2 id="goals" kicker="Goals & Non-goals · 목표와 비목표" title="무엇을 하고, 무엇을 하지 않나요" />
       <div className="grid md:grid-cols-2 gap-3">
         <Card className="!bg-[#E8F8E8]">
           <div className="font-bold text-emerald-700">목표 (Goals)</div>
           <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
-            <li>사용자가 자기만의 거래 프레임을 갖게 한다</li>
-            <li>결정 순간 근거 있는 판단을 늘린다(뇌동·추격 차단)</li>
-            <li>판단을 기록하고 컨텍스트로 쌓아 맥락을 발전시킨다</li>
-            <li>좋은 매매법이 나오도록 조언을 아끼지 않는다</li>
+            <li>사용자가 자기만의 거래 프레임을 갖도록 돕습니다</li>
+            <li>결정 순간, 근거 있는 판단을 늘립니다 (뇌동·추격 차단)</li>
+            <li>판단을 기록하고 컨텍스트로 쌓아 맥락을 발전시킵니다</li>
+            <li>좋은 매매법이 나오도록 조언을 아끼지 않습니다</li>
           </ul>
         </Card>
         <Card className="!bg-[#FFEDED]">
           <div className="font-bold text-red-600">비목표 (Non-goals · 의도된 절제)</div>
           <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
-            <li>종목 추천·"사라/팔아라" 답을 주지 않는다</li>
-            <li>자동매매·자동주문을 하지 않는다(human-in-the-loop)</li>
-            <li>수익률을 보장·예측하지 않는다</li>
-            <li>사용자의 판단을 대체하지 않는다</li>
+            <li>종목 추천이나 "사라/팔아라" 답을 드리지 않습니다</li>
+            <li>자동매매·자동주문을 하지 않습니다 (human-in-the-loop)</li>
+            <li>수익률을 보장하거나 예측하지 않습니다</li>
+            <li>사용자의 판단을 대체하지 않습니다</li>
           </ul>
         </Card>
       </div>
@@ -501,13 +466,13 @@ function Goals() {
 function StrategicFit() {
   return (
     <section className="space-y-4">
-      <H2 id="fit" kicker="Strategic Fit · 전략적 적합성" title="왜 카카오페이증권이 이걸 해야 하나" />
+      <H2 id="fit" kicker="Strategic Fit · 전략적 적합성" title="왜 카카오페이증권이 이걸 해야 하나요" />
       <div className="grid md:grid-cols-2 gap-3">
         {[
-          ['리텐션 해자', '이미 확보된 리텐션으로 프레임·판단 기록이 쌓일수록 개인화가 깊어지고 이탈 비용이 커진다.'],
-          ['차별화', '마음 놓고 금융하다, 다른 증권봇·AI인사이트가 "답"을 줄 때, 판단력을 키우는 유일한 결.'],
-          ['자산 활용', '이미 활성화된 커뮤니티 + 2030 초보 유저베이스에 자연스럽게 얹힌다.'],
-          ['브랜드 정합', '"쉽고 친근하게, 스스로 투자하게" — 그 누구보다 가까이있는 나만의 투자 에이전트로 포지셔닝'],
+          ['리텐션 해자', '이미 확보된 리텐션 위에서 프레임·판단 기록이 쌓일수록 개인화가 깊어지고, 이탈 비용이 커집니다.'],
+          ['차별화', '"마음 놓고 금융하다" — 다른 증권봇·AI인사이트가 "답"을 줄 때, 판단력을 키우는 유일한 결입니다.'],
+          ['자산 활용', '이미 활성화된 커뮤니티와 2030 초보 유저베이스에 자연스럽게 얹힙니다.'],
+          ['브랜드 정합', '"쉽고 친근하게, 스스로 투자하게" — 그 누구보다 가까이 있는 나만의 투자 에이전트로 포지셔닝합니다.'],
         ].map(([t, d]) => (
           <Card key={t} className="!bg-[#FFEC47]">
             <div className="font-bold">{t}</div>
@@ -530,7 +495,7 @@ function Risks() {
   ]
   return (
     <section className="space-y-4">
-      <H2 id="risk" kicker="Risks & Mitigations · 리스크와 완화" title="무엇이 위험하고, 어떻게 막나" />
+      <H2 id="risk" kicker="Risks & Mitigations · 리스크와 완화" title="무엇이 위험하고, 어떻게 막나요" />
       <Card className="!bg-white border border-gray-200 py-3">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -556,7 +521,7 @@ function FooterCTA() {
       <div className="bg-[#191919] rounded-2xl p-6 text-center">
         <div className="font-extrabold text-lg text-white">프로토타입 바로가기</div>
         <div className="mt-2 text-sm text-gray-300 leading-relaxed">
-          실제 sonnet 모델이 연결되어 동작합니다. 간단한 에이전트 튜닝이 포함되어 있습니다.
+          실제 Sonnet 모델이 연결되어 동작합니다. 간단한 에이전트 튜닝이 포함되어 있습니다.
           <br />
           <span className="text-gray-500">과제 평가 이외의 목표로는 사용을 자제해주세요.</span>
         </div>
