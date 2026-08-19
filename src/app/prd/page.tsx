@@ -315,7 +315,7 @@ function Differentiation() {
 
 function LiveScope() {
   const items = [
-    '코파일럿 대화(Sonnet)',
+    'Frame 대화(Sonnet)',
     '프레임 형성·편집',
     '결정 대조(실데이터)',
     '회고 백테스트',

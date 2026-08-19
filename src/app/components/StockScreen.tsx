@@ -67,7 +67,7 @@ export function StockScreen({ code, name, onBack }: { code: string; name: string
       </div>
 
       <div className="flex-1 px-4 py-3 text-xs text-gray-400">
-        결정하기 전에, 오른쪽 아래 코파일럿에게 내 원칙에 맞는지 물어보세요.
+        결정하기 전에, 오른쪽 아래 Frame에게 내 원칙에 맞는지 물어보세요.
       </div>
 
       {toast && (
@@ -78,8 +78,8 @@ export function StockScreen({ code, name, onBack }: { code: string; name: string
 
       {/* 결정의 순간 — 히어로 장면 */}
       <div className="flex h-14 shrink-0">
-        <button onClick={() => mock('주문은 프로토타입 범위 밖 — 코파일럿에게 먼저 물어보세요')} className="flex-1 bg-blue-500 text-white font-semibold">판매</button>
-        <button onClick={() => mock('주문은 프로토타입 범위 밖 — 코파일럿에게 먼저 물어보세요')} className="flex-1 bg-red-500 text-white font-semibold">구매</button>
+        <button onClick={() => mock('주문은 프로토타입 범위 밖 — Frame에게 먼저 물어보세요')} className="flex-1 bg-blue-500 text-white font-semibold">판매</button>
+        <button onClick={() => mock('주문은 프로토타입 범위 밖 — Frame에게 먼저 물어보세요')} className="flex-1 bg-red-500 text-white font-semibold">구매</button>
       </div>
     </div>
   )

@@ -59,7 +59,7 @@ export function FramePage({ frame, setFrame }: { frame: Frame; setFrame: (f: Fra
             <button onClick={() => remove(r.id)} className="text-gray-400 hover:text-red-500">✕</button>
           </div>
         ))}
-        {rules.length === 0 && <div className="text-xs text-gray-400">규칙이 없어. 아래에서 추가하거나, 대화로 코파일럿과 함께 만들어봐.</div>}
+        {rules.length === 0 && <div className="text-xs text-gray-400">규칙이 없어. 아래에서 추가하거나, 대화로 Frame과 함께 만들어봐.</div>}
       </div>
 
       <div className="mt-3 flex gap-2">

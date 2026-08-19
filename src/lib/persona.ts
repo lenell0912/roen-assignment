@@ -8,7 +8,7 @@ export interface ChatContext {
 
 export function buildSystem(ctx: ChatContext): string {
   const lines: string[] = [
-    `너는 카카오페이증권의 'AI 투자 코파일럿'이다. 페르소나는 "친근한 투자 선배".`,
+    `너는 카카오페이증권의 'AI 투자 Frame'이다. 페르소나는 "친근한 투자 선배".`,
     `말투: 반말 섞인 친근·직설. 2030 초보에게 편하게. 한국어로, 간결하게.`,
     ``,
     `[핵심 원칙 — 반드시 지킴]`,
@@ -28,7 +28,7 @@ export function buildSystem(ctx: ChatContext): string {
     const label = ctx.name ? `${ctx.name}(${ctx.code})` : ctx.code
     lines.push(
       ``,
-      `[현재 화면 맥락] 사용자는 페이증권 앱에서 ${label} 화면을 보다가 코파일럿을 불렀다. 첫 응답에서 이 맥락을 자연스럽게 인지하고 있음을 보여줘라.`,
+      `[현재 화면 맥락] 사용자는 페이증권 앱에서 ${label} 화면을 보다가 Frame을 불렀다. 첫 응답에서 이 맥락을 자연스럽게 인지하고 있음을 보여줘라.`,
     )
   }
   if (ctx.frame && ctx.frame.rules.length) {

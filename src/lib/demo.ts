@@ -15,8 +15,8 @@ export interface DemoStep {
 export const DEMO_STEPS: DemoStep[] = [
   {
     id: 'open',
-    label: 'FAB으로 코파일럿 호출',
-    narration: '폰 화면 오른쪽 아래 노란 버튼(FAB)을 눌러 코파일럿을 불러보세요. 실서비스에선 페이증권 앱 어느 화면에나 떠 있습니다.',
+    label: 'FAB으로 Frame 호출',
+    narration: '폰 화면 오른쪽 아래 노란 버튼(FAB)을 눌러 Frame을 불러보세요. 실서비스에선 페이증권 앱 어느 화면에나 떠 있습니다.',
   },
   {
     id: 'frame',
@@ -41,7 +41,7 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     id: 'context',
     label: '⭐ 종목상세에서 다시 불러보기',
-    narration: '코파일럿을 닫고, 홈에서 종목을 검색해 상세 화면으로 간 뒤 FAB을 다시 눌러보세요 — 보고 있던 화면의 맥락을 알고 옵니다.',
+    narration: 'Frame을 닫고, 홈에서 종목을 검색해 상세 화면으로 간 뒤 FAB을 다시 눌러보세요 — 보고 있던 화면의 맥락을 알고 옵니다.',
     bonus: true,
   },
 ]

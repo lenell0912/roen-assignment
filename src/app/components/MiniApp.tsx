@@ -56,7 +56,7 @@ export function MiniApp({
             className="block mx-auto w-10 h-1.5 rounded-full bg-gray-300 mb-2"
           />
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sm">🧭 AI 투자 코파일럿</span>
+            <span className="font-bold text-sm">🧭 AI 투자 Frame</span>
             {context.name && (
               <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">📍 {context.name}</span>
             )}

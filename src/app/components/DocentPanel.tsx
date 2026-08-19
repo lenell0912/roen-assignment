@@ -25,7 +25,7 @@ function providerBadge(provider: string | null, tossLive: boolean | null): strin
 }
 
 const STATIC_BADGES: { label: string; kind: 'live' | 'mock' }[] = [
-  { label: '코파일럿 응답·대조·백테스트 — LLM + 실데이터 라이브', kind: 'live' },
+  { label: 'Frame 응답·대조·백테스트 — LLM + 실데이터 라이브', kind: 'live' },
   { label: '원칙·판단 기록 — 브라우저 로컬 저장(실동작)', kind: 'live' },
   { label: '홈 화면·주문·커뮤니티 공유 — 목업(연출)', kind: 'mock' },
 ]

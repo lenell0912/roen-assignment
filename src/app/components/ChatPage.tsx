@@ -15,7 +15,7 @@ function openingText(hasFrame: boolean, ctx: ChatCtx): string {
   const where = ctx.name ? `지금 ${ctx.name} 화면 보고 있었네? ` : ''
   if (!hasFrame)
     return (
-      `${where}반가워! 난 답을 주는 봇이 아니라, 너만의 매매 원칙을 같이 만들고 지키게 돕는 코파일럿이야.\n` +
+      `${where}반가워! 난 답을 주는 봇이 아니라, 너만의 매매 원칙을 같이 만들고 지키게 돕는 Frame이야.\n` +
       `아직 원칙이 없네 — 그것부터 만들어볼까? 5분이면 돼. 평소에 뭘 보고 사고파는지 편하게 말해줘도 좋아.`
     )
   return `${where}네 원칙 기준으로 도와줄게. 종목을 물어보면 실데이터로 원칙에 대조하고, 반대 근거까지 보여줄게.`
@@ -149,7 +149,7 @@ export function ChatPage({
             })}
           </div>
         ))}
-        {loading && <div className="text-xs text-gray-400">코파일럿이 실데이터로 확인 중…</div>}
+        {loading && <div className="text-xs text-gray-400">Frame이 실데이터로 확인 중…</div>}
       </div>
 
       {/* 상태 적응 칩 */}
