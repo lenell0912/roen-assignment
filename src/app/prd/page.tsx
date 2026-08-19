@@ -1,117 +1,55 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 const KAKAO_FONT = '"Apple SD Gothic Neo", Pretendard, "Noto Sans KR", system-ui, sans-serif'
 
 export default function PRD() {
-  const [mode, setMode] = useState<'summary' | 'detail'>('summary')
-  const [active, setActive] = useState<string>('summary')
-  const [pending, setPending] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (mode === 'detail' && pending) {
-      document.getElementById(pending)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      setPending(null)
-    }
-  }, [mode, pending])
-
-  const goSection = (id: string) => {
-    setMode('detail')
-    setActive(id)
-    setPending(id)
-  }
-  const goSummary = () => {
-    setMode('summary')
-    setActive('summary')
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   return (
-    <div style={{ fontFamily: KAKAO_FONT }} className="min-h-screen bg-[#f7f8fa] text-[#191919]">
-      <TopBar active={active} onSummary={goSummary} onSection={goSection} />
+    <div style={{ fontFamily: KAKAO_FONT }} className="min-h-screen bg-white text-[#191919]">
+      <TopBar />
       <Hero />
-      {mode === 'summary' ? (
-        // 요약 개요 = 핵심 PRD (과제 필수 + 테제). 1~2장 분량.
-        <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
-          <Problem />
-          <Target />
-          <Scenario />
-          <Solution />
-          <Goals />
-          <Novelty />
-          <Hypotheses />
-          <Differentiation />
-          <FooterCTA />
-        </div>
-      ) : (
-        // 상세 = 부록(더 깊은 근거). 탭으로 진입.
-        <div className="max-w-3xl mx-auto px-5 pb-24 space-y-14 pt-8">
-          <MvpScope />
-          <StrategicFit />
-          <Risks />
-          <Roadmap />
-          <OpenQuestions />
-          <AiUsage />
-          <FooterCTA />
-        </div>
-      )}
+      <div className="max-w-3xl mx-auto px-5 pb-12 space-y-10 pt-8">
+        <Problem />
+        <Target />
+        <Hypotheses />
+        <Scenario />
+        <Solution />
+        <Goals />
+        <Novelty />
+        <Differentiation />
+        <StrategicFit />
+        <Risks />
+        <LiveScope />
+        <Roadmap />
+        <AiUsage />
+        <FooterCTA />
+      </div>
     </div>
   )
 }
 
-function TopBar({ active, onSummary, onSection }: { active: string; onSummary: () => void; onSection: (id: string) => void }) {
-  const sections: [string, string][] = [
-    ['스코프', 'scope'],
-    ['전략적합성', 'fit'],
-    ['리스크', 'risk'],
-    ['로드맵', 'roadmap'],
-    ['남은질문', 'open'],
-    ['AI활용', 'ai'],
-  ]
+function TopBar() {
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b">
-      <div className="max-w-3xl mx-auto px-5 h-14 flex items-center gap-3">
+      <div className="max-w-3xl mx-auto px-5 h-[52px] flex items-center gap-4">
         <FrameLogo />
-        <Link href="/" className="ml-auto text-sm font-semibold bg-[#fee500] px-3 py-1.5 rounded-full">
-          프로토타입 열기 →
-        </Link>
-      </div>
-      <div className="max-w-3xl mx-auto px-5 flex items-center gap-5">
-        <TabBtn label="요약 개요" active={active === 'summary'} onClick={onSummary} />
-        {sections.map(([label, id]) => (
-          <TabBtn key={id} label={label} active={active === id} onClick={() => onSection(id)} />
-        ))}
+        <span aria-hidden className="h-6 w-px bg-gray-200" />
+        <span className="text-sm font-bold text-[#191919]">Product Requirement Document</span>
       </div>
     </div>
-  )
-}
-
-function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 py-3 text-sm font-semibold border-b-[3px] transition-colors ${
-        active ? 'border-[#191919] text-[#191919]' : 'border-transparent text-gray-400 hover:text-gray-700'
-      }`}
-    >
-      {label}
-    </button>
   )
 }
 
 function FrameLogo() {
   return (
-    <span
-      className="select-none inline-flex items-center gap-1 font-black text-[#16244a] text-xl leading-none"
-      style={{ letterSpacing: '-0.04em' }}
-      aria-label="Frame"
-    >
-      <span aria-hidden>[</span>
-      <span aria-hidden className="mx-0.5 inline-block h-3.5 w-2 -skew-x-12 bg-[#2f6bff]" />
-      <span>Frame</span>
-      <span aria-hidden className="ml-0.5">]</span>
-    </span>
+    <img
+      src="/logo.png"
+      alt="Frame"
+      width={89}
+      height={32}
+      className="h-8 w-auto select-none object-contain"
+    />
   )
 }
 
@@ -152,15 +90,17 @@ function Summary({ onDetail }: { onDetail: () => void }) {
 
 function Hero() {
   return (
-    <header className="bg-white border-b">
-      <div className="max-w-3xl mx-auto px-5 py-8">
-        <div className="text-xs font-bold text-[#c9a800]">카카오페이증권 · 프로덕트 빌더(시니어) 과제</div>
+    <header className="bg-white">
+      <div className="max-w-3xl mx-auto px-5 pt-[56px] pb-4">
+        <div className="text-xs font-bold text-[#3478F6] pl-0.5">카카오페이증권 · 프로덕트 빌더(시니어) 과제</div>
         <h1 className="mt-3 text-3xl md:text-4xl font-extrabold leading-tight tracking-tight">
           사용자와 성장하는 투자 에이전트, Frame
         </h1>
         <p className="mt-4 text-gray-600 text-[15px] leading-relaxed">
           혼자 사고팔다 보면 &quot;내가 이걸 왜 샀지?&quot; 싶은 순간을 Frame이 기록하고 같이 고민합니다. 투자 동반자로서
-          사용자의 곁에서 함께, 더 좋은 투자를 할 수 있도록 사용자만의 투자 기준과 가치관을 조금씩 단단하게 만들어갑니다.
+          사용자의 곁에서 함께, 더 좋은 투자를 할 수 있도록 사용자만의 투자 기준과 매매 가치관을 조금씩 단단하게 만들어갑니다.
+          <br />
+          Frame과 함께 더 이상 감으로 투자하지 말고, 나만의 투자 기법을 만들 수 있습니다.
         </p>
       </div>
     </header>
@@ -168,13 +108,23 @@ function Hero() {
 }
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-white rounded-2xl border p-5 ${className}`}>{children}</div>
+  return <div className={`bg-[#F7F8FA] rounded-2xl p-5 ${className}`}>{children}</div>
+}
+
+function FlowArrow() {
+  return (
+    <div className="flex justify-center py-1" aria-hidden>
+      <svg width="14" height="16" viewBox="0 0 14 16" fill="none" className="text-gray-300">
+        <path d="M7 0v13M2 8l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  )
 }
 
 function H2({ id, kicker, title }: { id?: string; kicker: string; title: string }) {
   return (
     <div id={id} className="scroll-mt-16">
-      <div className="text-xs font-bold text-[#c9a800]">{kicker}</div>
+      <div className="text-xs font-bold text-[#3478F6] pl-0.5">{kicker}</div>
       <h2 className="mt-1 text-2xl font-extrabold">{title}</h2>
     </div>
   )
@@ -182,16 +132,15 @@ function H2({ id, kicker, title }: { id?: string; kicker: string; title: string 
 
 function Problem() {
   const roots = {
-    R1: { t: '프레임 부재', d: '무엇을 근거로 사고팔지 기준이 없다. 매 결정이 즉흥·감정·남의 말. "왜 사?"에 구조적으로 답을 못 한다.' },
-    R2: { t: '피드백 루프 부재', d: '왜 샀는지 기록이 없어 결과가 실력인지 운인지 구분 못 한다. 그래서 다음에도 같은 실수 — 판단력이 안 자라는 진짜 이유.' },
-    R3: { t: '감정(FOMO·패닉)', d: '중요하지만 대개 R1의 하위 증상. 프레임이 생기면 흔들릴 때 돌아갈 기준이 생겨 감정 매매가 크게 준다.' },
+    R1: { t: '프레임 부재', d: '무엇을 언제 사고 팔지에 대한 기준이 없어서, 많은 결정이 즉흥적이거나 감정적이고 남의 말에 좌우됩니다. 내가 왜 이때 이 주식을 샀는지 답변하기 어렵습니다.' },
+    R2: { t: '피드백 루프 부재', d: '왜 샀는지에 대한 기록이 없어 좋은 결과가 나와도 혹은 나쁜 결과가 나와도 왜인지 분석이 체계적이지 못합니다. 그래서 다음에도 같은 실수를 반복합니다.' },
   } as const
-  const [tab, setTab] = useState<keyof typeof roots>('R2')
+  const [tab, setTab] = useState<keyof typeof roots>('R1')
   return (
     <section className="space-y-4">
-      <H2 id="problem" kicker="Problem · 해결하려는 문제" title="정보는 넘치는데, 스스로 판단이 안 된다" />
+      <H2 id="problem" kicker="Problem · 해결하려는 문제" title="정보는 넘치는데, 스스로 판단이 안 됩니다" />
       <p className="text-gray-600 text-sm">
-        "정보 과잉 → 판단 부재"를 한 겹 더 파면 두 결핍이 나온다. (아래 탭을 눌러보세요)
+        투자에 대한 정보는 넘쳐나고, 개인이 투자를 선택하는 판단 기준은 갈수록 희미해지고 있습니다. 최근 주식시장에서 발생하는 여러 가지 FOMO 현상과 레버리지 상품 이슈, 뇌동매매와 빚투 모두 자신의 기준과 가치가 없어서 발생한 이슈입니다.
       </p>
       <Card>
         <div className="flex gap-2">
@@ -212,11 +161,14 @@ function Problem() {
           <div className="mt-1 text-sm text-gray-600">{roots[tab].d}</div>
         </div>
       </Card>
-      <div>
-        <div className="text-xs font-semibold text-gray-500 mb-2">이 결핍이 실패 패턴(증상)으로 나타난다</div>
+      <div className="rounded-2xl bg-gradient-to-br from-red-50 to-white p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <span aria-hidden className="text-base">⚠️</span>
+          <span className="text-sm font-extrabold text-red-700">이 결핍이 실패 패턴(증상)으로 나타납니다</span>
+        </div>
         <div className="flex flex-wrap gap-2">
           {['테마·한 종목 쏠림', '고점 추격매수(FOMO)', '레버리지 과신', '리딩방 뇌동매매', '손절 실패·물타기'].map((s) => (
-            <span key={s} className="text-xs bg-red-50 text-red-600 px-2.5 py-1 rounded-full">
+            <span key={s} className="text-sm font-semibold bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-full shadow-sm">
               {s}
             </span>
           ))}
@@ -229,10 +181,10 @@ function Problem() {
 function Target() {
   return (
     <section className="space-y-4">
-      <H2 id="target" kicker="Target · 타겟 고객" title="2030 초보 + 감으로 투자하는 사람" />
+      <H2 id="target" kicker="Target · 타겟 고객" title="2030 초보 투자자" />
       <div className="grid md:grid-cols-2 gap-3">
         <Card>
-          <div className="font-bold">누구</div>
+          <div className="font-bold">Who</div>
           <ul className="mt-2 text-sm text-gray-600 space-y-1 list-disc ml-4">
             <li>모바일 네이티브, 유튜브로 투자 학습</li>
             <li>커뮤니티 활동 활발, 소액·잦은 매매</li>
@@ -240,11 +192,11 @@ function Target() {
           </ul>
         </Card>
         <Card>
-          <div className="font-bold">왜 카카오페이증권</div>
+          <div className="font-bold">Why</div>
           <ul className="mt-2 text-sm text-gray-600 space-y-1 list-disc ml-4">
-            <li>쉽고 친근한 UX · 행동 넛지 DNA</li>
-            <li>이미 활성화된 커뮤니티(토론방)</li>
-            <li>기존 증권봇·AI인사이트를 넘어설 여지</li>
+            <li>재테크가 가장 절실한 세대</li>
+            <li>정보를 다루는 것이 익숙한 세대</li>
+            <li>AI를 가장 잘 활용하는 세대</li>
           </ul>
         </Card>
       </div>
@@ -254,20 +206,30 @@ function Target() {
 
 function Solution() {
   const stages = [
-    { k: '① 형성', t: '프레임 형성', d: '대화로 나의 매매 규칙을 끌어내 저장. AI는 답을 주지 않고 되묻는다("왜 사? 팔 기준은?").' },
+    { k: '① 형성', t: '프레임 형성', d: '대화로 나의 매매 규칙을 끌어내 저장. AI는 답을 주지 않고 되묻는다.' },
     { k: '② 결정', t: '결정 순간 (히어로)', d: '아무 종목의 실시간·과거 데이터로 내 프레임에 대조 + 반대근거. 부합/위반을 짚되 결정은 사용자.' },
-    { k: '③ 기록', t: '판단 기록', d: '그때의 근거를 자동 저장(개인 위키). 운/실력 분리의 원천.' },
+    { k: '③ 기록', t: '판단 기록', d: '그때의 근거를 자동 저장(개인 llm 위키이자 컨텍스트 레이어). 운/실력 분리의 원천.' },
     { k: '④ 회고', t: '과거 대입 + 진화', d: '내 프레임을 과거 데이터에 백테스트하고, 규칙별 엣지를 채점해 프레임을 진화시킨다.' },
   ]
   const [i, setI] = useState(1)
   return (
     <section className="space-y-4">
       <H2 id="solution" kicker="Solution · 해결 방식" title="나만의 거래 프레임 강화 루프" />
-      <Card className="bg-[#fffdf0] border-[#fee500]">
-        <div className="text-sm">
-          <b>해결 원칙(고정):</b> ① 답을 주지 않는다 — 프레임을 끌어내고·대조하고·되먹인다 · ② 항상 내 맥락 근거 · ③ 결정·실행은 사용자.
+      <div className="rounded-2xl bg-[#FFEC47] text-[#191919] p-5">
+        <div className="text-xs font-extrabold mb-3">해결 원칙 (고정)</div>
+        <div className="grid sm:grid-cols-3 gap-2">
+          {[
+            ['① 답을 주지 않는다', '프레임을 끌어내고·대조하고·되먹인다'],
+            ['② 항상 내 맥락 근거', '내 데이터·내 규칙 기반으로만'],
+            ['③ 결정·실행은 사용자', 'human-in-the-loop'],
+          ].map(([t, d]) => (
+            <div key={t} className="rounded-xl bg-white p-3">
+              <div className="text-sm font-bold">{t}</div>
+              <div className="mt-1 text-xs text-[#191919]/70 leading-relaxed">{d}</div>
+            </div>
+          ))}
         </div>
-      </Card>
+      </div>
       <div className="grid grid-cols-4 gap-2">
         {stages.map((s, k) => (
           <button
@@ -283,9 +245,6 @@ function Solution() {
         <div className="font-bold">{stages[i].t}</div>
         <div className="mt-1 text-sm text-gray-600">{stages[i].d}</div>
       </Card>
-      <p className="text-xs text-gray-400">
-        기둥: 코파일럿(촉진자) · 개인 위키(프레임+기록 저장소) · 커뮤니티 다리(멘탈케어). 유튜브 영상→프레임 재료는 온램프.
-      </p>
     </section>
   )
 }
@@ -293,12 +252,12 @@ function Solution() {
 function Novelty() {
   return (
     <section className="space-y-4">
-      <H2 id="novelty" kicker="Novelty · 무엇이 새로운가" title="기능이 아니라, 입장·개입 순간·루프가 새롭다" />
+      <H2 id="novelty" kicker="Novelty · 무엇이 새로운가" title="기능이 아닌 목표" />
       <div className="grid md:grid-cols-3 gap-3">
         {[
           ['입장', '"답을 거부하는 AI"', '모두가 시그널·예측을 줄 때, 우리는 일부러 답을 안 주고 판단력을 키운다.'],
-          ['개입 순간', '결정 직전, 앱 안', '구매 버튼 누르기 직전 페이증권 안에서 네 규칙을 실데이터로 들이댄다.'],
-          ['루프', '프레임의 자기 진화', '네 규칙을 네 결과로 채점해 규칙을 데이터로 개정한다.'],
+          ['개입 순간', '결정 직전, 앱 안', '구매 버튼 누르기 직전 페이증권 안에서 사용자 규칙을 실데이터로 들이댄다.'],
+          ['루프', '프레임의 자기 진화', '사용자 규칙을 사용자 결과로 채점해 규칙을 데이터로 개정한다.'],
         ].map(([k, t, d]) => (
           <Card key={t}>
             <div className="text-xs font-bold text-[#c9a800]">{k}</div>
@@ -307,12 +266,12 @@ function Novelty() {
           </Card>
         ))}
       </div>
-      <div className="bg-[#191919] text-white rounded-2xl p-5">
-        <div className="text-xs font-bold text-[#fee500]">실제 동작 예 · 프레임 진화</div>
+      <div className="bg-white border border-gray-200 text-[#191919] rounded-2xl p-5">
+        <div className="text-xs font-extrabold">실제 동작 예 · 프레임 진화</div>
         <div className="mt-2 text-sm leading-relaxed">
-          삼성전자에서 규칙을 채점하니 — <b>정배열</b> 규칙은 엣지 <span className="text-emerald-400">+4.8%p</span>(유지),{' '}
-          <b>고점회피</b> 규칙은 <span className="text-red-400">−13.3%p</span>로 오히려 손해. AI가 &quot;고점회피 10%→5%로 완화&quot;를 데이터 근거로 제안하고, 한 번 누르면 프레임이 스스로 수정된다.{' '}
-          <span className="text-gray-400">(과최적화 경고 포함)</span>
+          삼성전자에서 규칙을 채점하니 — <b>정배열</b> 규칙은 엣지 <span className="font-bold text-emerald-700">+4.8%p</span>(유지),{' '}
+          <b>고점회피</b> 규칙은 <span className="font-bold text-red-600">−13.3%p</span>로 오히려 손해. Frame 에이전트가 &quot;고점회피 10%→5%로 완화&quot;를 데이터 근거로 제안하고, 한 번 누르면 프레임이 스스로 수정된다.{' '}
+          <span className="text-[#191919]/60">(과최적화 경고 포함)</span>
         </div>
       </div>
     </section>
@@ -327,7 +286,7 @@ function Hypotheses() {
         {[
           ['H1', '결정 순간 "내 프레임"에 대조시키면 근거 있는 결정이 늘고 뇌동·추격매수가 준다.'],
           ['H2', '판단을 기록하고 결과와 되먹이면(회고·진화) 운/실력이 분리되어 판단력이 자란다.'],
-          ['H3', '프레임이 생기면 감정 매매(FOMO·패닉)가 준다.'],
+          ['H3', '프레임이 생기면 감정 매매(FOMO·패닉)가 줄어들고 수익 또한 기존대비 우상향 할 것이다.'],
         ].map(([h, d]) => (
           <Card key={h}>
             <div className="font-extrabold text-[#c9a800]">{h}</div>
@@ -335,8 +294,8 @@ function Hypotheses() {
           </Card>
         ))}
       </div>
-      <Card>
-        <div className="font-bold text-sm">검증 지표</div>
+      <Card className="!bg-white border border-gray-200 pb-2 text-[#191919]">
+        <div className="text-base font-extrabold text-[#c9a800]">검증 지표</div>
         <div className="mt-2 overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
@@ -347,9 +306,9 @@ function Hypotheses() {
                 ['학습·리텐션', '회고 완료 수 · 프레임 진화 횟수 · 위키 기록 누적 · WAU'],
                 ['정성', '"혼자보다 나은 결정을 했다 / 내 기준이 생겼다" (설문·NPS)'],
               ].map(([a, b]) => (
-                <tr key={a} className="border-t">
+                <tr key={a} className="border-t border-black/10">
                   <td className="py-2 pr-3 font-semibold whitespace-nowrap align-top">{a}</td>
-                  <td className="py-2 text-gray-600">{b}</td>
+                  <td className="py-2 text-[#191919]/70">{b}</td>
                 </tr>
               ))}
             </tbody>
@@ -365,7 +324,7 @@ function Differentiation() {
     <section className="space-y-4">
       <H2 kicker="Differentiation · 차별화" title="기존 증권봇·AI인사이트 대비" />
       <div className="grid md:grid-cols-2 gap-3">
-        <Card className="border-gray-200">
+        <Card>
           <div className="font-bold text-gray-500">기존 (증권봇 · AI인사이트)</div>
           <ul className="mt-2 text-sm text-gray-500 space-y-1 list-disc ml-4">
             <li>Q&A · 정보 제공 · 시그널/예측</li>
@@ -373,9 +332,9 @@ function Differentiation() {
             <li>사후 매매일지 / 사전 스크리너 / 별개 챗봇으로 분절</li>
           </ul>
         </Card>
-        <Card className="border-[#fee500] bg-[#fffdf0]">
-          <div className="font-bold">우리 (판단 코파일럿)</div>
-          <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
+        <Card className="!bg-[#191919]">
+          <div className="font-bold text-white">우리 (Frame 에이전트)</div>
+          <ul className="mt-2 text-sm text-gray-300 space-y-1 list-disc ml-4">
             <li>판단 프레임을 키운다 → 판단력 성장</li>
             <li>답을 거부, 결정 직전 개입</li>
             <li>형성→결정→기록→진화를 하나의 프레임으로 관통</li>
@@ -386,17 +345,43 @@ function Differentiation() {
   )
 }
 
+function LiveScope() {
+  const items = [
+    '코파일럿 대화(Sonnet)',
+    '프레임 형성·편집',
+    '결정 대조(실데이터)',
+    '회고 백테스트',
+    '프레임 진화(엣지·제안·적용)',
+    '증권사 오픈 API(토스증권) 실연동',
+    '판단 기록',
+  ]
+  return (
+    <section className="space-y-4">
+      <H2 id="live" kicker="Live · 지금 실제 동작" title="프로토타입에서 실제로 도는 것" />
+      <Card className="!bg-white border border-emerald-200">
+        <div className="flex flex-wrap gap-1.5">
+          {items.map((it) => (
+            <span key={it} className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">
+              ✓ {it}
+            </span>
+          ))}
+        </div>
+      </Card>
+    </section>
+  )
+}
+
 function Roadmap() {
   return (
     <section className="space-y-4">
       <H2 id="roadmap" kicker="Roadmap · 로드맵" title="판단에서 시작해, 나만의 트레이딩 프로덕트로" />
       <div className="grid md:grid-cols-3 gap-3">
         {[
-          ['Phase 1 · 지금(MVP)', '#22a06b', ['프레임 루프(형성→결정→기록→회고+진화)', '토스 실데이터 · Sonnet 에이전트', '탐색형 프로토타입']],
+          ['Phase 1 · 지금(MVP)', '#22a06b', ['프레임 루프 설계 구현', '증권사 오픈 API(토스증권) 실연동 · Sonnet 에이전트', '탐색형 프로토타입']],
           ['Phase 2 · 확장', '#f0a020', ['유튜브 온램프 실동작', '커뮤니티 근거공유 실동작', '정식 백테스트']],
           ['Phase 3 · 비전', '#8f7ee7', ['감정 코치 에이전트', '멀티에이전트 · 카톡 실연동', '조건 알림 → 모의 자동주문']],
-        ].map(([t, c, items]) => (
-          <Card key={t as string} className="border-t-4" >
+        ].map(([t, c, items], idx) => (
+          <Card key={t as string} className={['!bg-[#FFFAC2]', '!bg-[#FFF285]', '!bg-[#FFEC47]'][idx]}>
             <div className="font-bold" style={{ color: c as string }}>
               {t as string}
             </div>
@@ -422,13 +407,16 @@ function AiUsage() {
             <b>기획</b>: Claude와 브레인스토밍→스펙→구현계획을 반복하며 문제 정의를 프레임 부재까지 파고듦.
           </li>
           <li>
-            <b>제품 자체가 에이전트</b>: Claude Sonnet + 도구(시세·프레임 대조·백테스트)로 human-in-the-loop 코파일럿 구현.
+            <b>제품 자체가 에이전트</b>: Claude Sonnet + 도구(시세·프레임 대조·백테스트)로 human-in-the-loop 에이전트 구현.
           </li>
           <li>
             <b>신뢰 설계</b>: LLM은 "이해·추출·제안"만, 신호·엣지 계산은 결정론적 코드로 분리(환각 방지, 검증 가능).
           </li>
           <li>
             <b>구현</b>: Next.js로 스캐폴드→실데이터 연동→에이전트→미니앱 페이지까지 AI 페어로 개발, TDD로 코어 검증.
+          </li>
+          <li>
+            <b>로고</b>: 힉스필드(Higgsfield) MCP를 활용하여 브랜드 로고 이미지 생성.
           </li>
         </ul>
       </Card>
@@ -438,32 +426,43 @@ function AiUsage() {
 
 function Scenario() {
   const steps = [
-    ['① 프레임 형성', '대화로 "난 왜 사고, 언제 파나"를 끌어냄 → 규칙 3개 저장. 답은 안 주고 되물음.'],
-    ['② 결정 순간', '삼성전자 사려는데, 결정 페이지가 "2차전지 이미 62% — 쏠림" 위반을 짚음. 지훈은 보류.'],
+    ['① 투자 에이전트 프레임과 대화', '대화로 "난 왜 사고, 언제 파나"를 끌어냄 → 규칙 3개 저장. 투자 시점을 단언하기 보다는 사용자의 판단을 지원하고 평가해줌.'],
+    ['② 결정 순간', '삼성전자 사려는데, 프레임 에이전트가 "2차전지 이미 62% — 쏠림" 위반을 짚음. 지훈은 보류.'],
     ['③ 기록', '"오늘은 감정이었다"를 근거로 남김. 나중에 운/실력을 가릴 씨앗.'],
     ['④ 회고·진화', '한 달 뒤, "고점회피 규칙이 오히려 −13%p 손해"를 데이터로 확인 → 규칙을 완화.'],
   ]
   return (
     <section className="space-y-4">
-      <H2 id="scenario" kicker="User Scenario · 핵심 사용자 시나리오" title="지훈, 25세 — 에코프로에 물린 직장인" />
-      <Card className="bg-red-50 border-red-100">
-        <div className="text-sm text-red-700">
-          <b>Before.</b> 유튜브 보고 고점에 샀는데 왜 샀는지 설명 못 함. 커뮤니티 보며 불안, 손절·물타기 반복. 다음에도 똑같이.
+      <H2 id="scenario" kicker="User Scenario · 핵심 사용자 시나리오" title="지훈, 25세 — 삼성전자에 물린 직장인" />
+      <div className="rounded-2xl bg-white border border-gray-200 p-5">
+        <div className="inline-flex items-center gap-1.5 mb-2">
+          <span className="text-[11px] font-extrabold tracking-wide text-white bg-red-500 px-2 py-0.5 rounded-full">BEFORE</span>
         </div>
-      </Card>
+        <div className="text-sm font-medium text-red-900">
+          유튜브 보고 고점에 샀는데 왜 샀는지 설명 못 함. 커뮤니티 보며 불안, 손절·물타기 반복. 다음에도 똑같이.
+        </div>
+      </div>
+      <FlowArrow />
       <div className="space-y-2">
-        {steps.map(([t, d]) => (
-          <Card key={t}>
-            <div className="font-bold text-sm">{t}</div>
-            <div className="mt-1 text-sm text-gray-600">{d}</div>
-          </Card>
+        {steps.map(([t, d], idx) => (
+          <div key={t}>
+            {idx > 0 && <FlowArrow />}
+            <Card>
+              <div className="font-bold text-sm">{t}</div>
+              <div className="mt-1 text-sm text-gray-600">{d}</div>
+            </Card>
+          </div>
         ))}
       </div>
-      <Card className="bg-emerald-50 border-emerald-100">
-        <div className="text-sm text-emerald-800">
-          <b>After.</b> 남 따라가 아니라 <b>자기 기준</b>으로 결정하고, 그 판단이 데이터로 쌓여 <b>점점 나아진다.</b>
+      <FlowArrow />
+      <div className="rounded-2xl bg-white border border-gray-200 p-5">
+        <div className="inline-flex items-center gap-1.5 mb-2">
+          <span className="text-[11px] font-extrabold tracking-wide text-white bg-emerald-600 px-2 py-0.5 rounded-full">AFTER</span>
         </div>
-      </Card>
+        <div className="text-sm font-medium text-emerald-900">
+          남 따라가 아니라 <b>자기 기준</b>으로 결정하고, 그 판단이 데이터로 쌓여 <b>점점 나아진다.</b>
+        </div>
+      </div>
     </section>
   )
 }
@@ -473,15 +472,16 @@ function Goals() {
     <section className="space-y-4">
       <H2 id="goals" kicker="Goals & Non-goals · 목표와 비목표" title="무엇을 하고, 무엇을 안 하나" />
       <div className="grid md:grid-cols-2 gap-3">
-        <Card className="border-emerald-200">
+        <Card className="!bg-[#E8F8E8]">
           <div className="font-bold text-emerald-700">목표 (Goals)</div>
           <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
             <li>사용자가 자기만의 거래 프레임을 갖게 한다</li>
             <li>결정 순간 근거 있는 판단을 늘린다(뇌동·추격 차단)</li>
-            <li>판단을 기록·되먹여 판단력이 자라게 한다</li>
+            <li>판단을 기록하고 컨텍스트로 쌓아 맥락을 발전시킨다</li>
+            <li>좋은 매매법이 나오도록 조언을 아끼지 않는다</li>
           </ul>
         </Card>
-        <Card className="border-red-200">
+        <Card className="!bg-[#FFEDED]">
           <div className="font-bold text-red-600">비목표 (Non-goals · 의도된 절제)</div>
           <ul className="mt-2 text-sm text-gray-700 space-y-1 list-disc ml-4">
             <li>종목 추천·"사라/팔아라" 답을 주지 않는다</li>
@@ -495,49 +495,20 @@ function Goals() {
   )
 }
 
-function MvpScope() {
-  const groups: [string, string, string[]][] = [
-    ['✅ 지금 실제 동작', '#22a06b', ['코파일럿 대화(Sonnet)', '프레임 형성·편집', '결정 대조(실데이터)', '회고 백테스트', '프레임 진화(엣지·제안·적용)', '토스/Yahoo 실연동', '판단 기록']],
-    ['🟡 목업/라이트', '#f0a020', ['커뮤니티 다리', '유튜브 온램프', '스크린샷 배경', '카카오톡 채널']],
-    ['🔮 로드맵', '#8f7ee7', ['정식 백테스트', '모의 자동주문', '멀티에이전트', '카톡 실연동']],
-  ]
-  return (
-    <section className="space-y-4">
-      <H2 id="scope" kicker="Scope · MVP 범위" title="지금 만든 것 vs 목업 vs 로드맵" />
-      <div className="grid md:grid-cols-3 gap-3">
-        {groups.map(([t, c, items]) => (
-          <Card key={t}>
-            <div className="font-bold" style={{ color: c }}>
-              {t}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {items.map((it) => (
-                <span key={it} className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
-                  {it}
-                </span>
-              ))}
-            </div>
-          </Card>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function StrategicFit() {
   return (
     <section className="space-y-4">
       <H2 id="fit" kicker="Strategic Fit · 전략적 적합성" title="왜 카카오페이증권이 이걸 해야 하나" />
       <div className="grid md:grid-cols-2 gap-3">
         {[
-          ['리텐션 해자', '프레임·판단 기록이 쌓일수록 개인화가 깊어지고 이탈 비용이 커진다.'],
-          ['차별화', '증권봇·AI인사이트가 "답"을 줄 때, 판단력을 키우는 유일한 결.'],
+          ['리텐션 해자', '이미 확보된 리텐션으로 프레임·판단 기록이 쌓일수록 개인화가 깊어지고 이탈 비용이 커진다.'],
+          ['차별화', '마음 놓고 금융하다, 다른 증권봇·AI인사이트가 "답"을 줄 때, 판단력을 키우는 유일한 결.'],
           ['자산 활용', '이미 활성화된 커뮤니티 + 2030 초보 유저베이스에 자연스럽게 얹힌다.'],
-          ['브랜드 정합', '"쉽고 친근하게, 스스로 투자하게" — 카카오페이 결과 일치.'],
+          ['브랜드 정합', '"쉽고 친근하게, 스스로 투자하게" — 그 누구보다 가까이있는 나만의 투자 에이전트로 포지셔닝'],
         ].map(([t, d]) => (
-          <Card key={t}>
+          <Card key={t} className="!bg-[#FFEC47]">
             <div className="font-bold">{t}</div>
-            <div className="mt-1 text-sm text-gray-600">{d}</div>
+            <div className="mt-1 text-sm text-[#191919]/70">{d}</div>
           </Card>
         ))}
       </div>
@@ -557,7 +528,7 @@ function Risks() {
   return (
     <section className="space-y-4">
       <H2 id="risk" kicker="Risks & Mitigations · 리스크와 완화" title="무엇이 위험하고, 어떻게 막나" />
-      <Card>
+      <Card className="!bg-white border border-gray-200 py-3">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
@@ -575,35 +546,21 @@ function Risks() {
   )
 }
 
-function OpenQuestions() {
-  return (
-    <section className="space-y-4">
-      <H2 id="open" kicker="Open Questions · 남은 결정" title="아직 열려 있는 질문들" />
-      <Card>
-        <ul className="text-sm text-gray-600 space-y-1.5 list-disc ml-4">
-          <li>개인 표본이 적을 때 프레임 진화의 과최적화를 어떻게 방지할까? (다종목·다구간 검증)</li>
-          <li>프레임 만들기를 얼마나 더 가볍게 만들 수 있나? (온보딩 이탈 최소화)</li>
-          <li>커뮤니티 발행에서 "자랑"이 아닌 "근거" 문화를 어떻게 유지할까?</li>
-          <li>수익화 라인은? (심화 회고·멀티 전략·프리미엄 코칭)</li>
-        </ul>
-      </Card>
-    </section>
-  )
-}
-
 function FooterCTA() {
   return (
     <section>
-      <div className="bg-[#fee500] rounded-2xl p-6 text-center">
-        <div className="font-extrabold text-lg">직접 만져보세요</div>
-        <div className="mt-1 text-sm text-[#5a4d00]">아무 종목·질문으로 벗어나도 실데이터로 동작합니다.</div>
-        <Link href="/" className="inline-block mt-3 bg-[#191919] text-white px-5 py-2.5 rounded-full font-semibold">
-          프로토타입 열기 →
+      <hr className="border-t border-gray-200 mb-8" />
+      <div className="bg-[#191919] rounded-2xl p-6 text-center">
+        <div className="font-extrabold text-lg text-white">프로토타입 바로가기</div>
+        <div className="mt-2 text-sm text-gray-300 leading-relaxed">
+          실제 sonnet 모델이 연결되어 동작합니다. 간단한 에이전트 튜닝이 포함되어 있습니다.
+          <br />
+          <span className="text-gray-500">과제 평가 이외의 목표로는 사용을 자제해주세요.</span>
+        </div>
+        <Link href="/" className="inline-block mt-3 bg-[#FFEC47] text-[#191919] px-5 py-2.5 rounded-full font-semibold">
+          프로토타입 →
         </Link>
       </div>
-      <p className="mt-4 text-center text-[11px] text-gray-400">
-        본 문서/서비스는 투자 참고용이며 투자자문이 아닙니다. 최종 결정은 사용자에게 있습니다.
-      </p>
     </section>
   )
 }
