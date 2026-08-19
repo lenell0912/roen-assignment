@@ -408,11 +408,12 @@ git commit -m "feat(proto): update_frame 도구 입력 정제 함수 rulesFromTo
 
 ### Task 4: 에이전트 백엔드 — 도구 2개 추가 + 도구 출력 반환 + 페르소나 갱신
 
-`resolve_stock`(이름→코드), `update_frame`(대화→원칙 저장). `/api/chat`이 도구 **출력**까지 클라이언트에 돌려줘야 인라인 카드를 그릴 수 있다. 프레임 없으면 대조/회고 도구가 정직하게 거절한다.
+`resolve_stock`(이름→코드), `update_frame`(대화→원칙 저장). `/api/chat`이 도구 **출력**까지 클라이언트에 돌려줘야 인라인 카드를 그릴 수 있다. 프레임 없으면 대조/회고 도구가 정직하게 거절한다. 추가로 ① 토스 실패 시 Yahoo **런타임 자동 폴백**(서버리스 IP 정책 대비 — 스펙 리스크 항목), ② "모르면 모른다" 정직 처리 페르소나 명문화(스펙 §7 가드레일).
 
 **Files:**
 - Modify: `src/lib/tools.ts` (전체 교체)
 - Modify: `src/lib/persona.ts` (전체 교체)
+- Modify: `src/lib/market/index.ts` (전체 교체 — 자동 폴백)
 - Modify: `src/app/api/chat/route.ts:39-45` (usedTools에 output 포함)
 
 - [ ] **Step 1: `src/lib/tools.ts` 전체 교체**
@@ -532,6 +533,7 @@ export function buildSystem(ctx: ChatContext): string {
     `5) 포트폴리오 맥락이 필요하면 get_portfolio를 쓴다(쏠림 등).`,
     `6) 대화에서 사용자의 매매 원칙이 새로 만들어지거나 바뀌면 update_frame으로 저장한다(기존 규칙 포함 전체 교체본). 규칙은 3~4개면 충분하다. 저장했으면 저장됐다고 알려줘라.`,
     `7) 결정·실행·외부 공유는 사용자 몫임을 상기시킨다. 투자자문이 아니라 참고임을 자연스럽게 고지.`,
+    `8) 모르는 것·도구 실패·미지원 종목은 솔직하게 "모른다/안 된다"고 말한다. 추측으로 채우지 않는다.`,
     ``,
     `[행동] (a) 내 맥락 팩트 브리핑 → (b) "왜 지금? 네 규칙엔 부합해?" 되묻기 → (c) 반대편 근거(악마의 변호인).`,
     `프레임이 비어있거나 부실하면, 규칙을 끌어내는 질문을 해라(예: "넌 어떤 종목을 왜 사? 팔 때 기준은?"). 한 번에 하나씩 물어라.`,
@@ -553,7 +555,40 @@ export function buildSystem(ctx: ChatContext): string {
 }
 ```
 
-- [ ] **Step 3: `src/app/api/chat/route.ts`의 도구 실행 블록(39-45행)을 다음으로 교체**
+- [ ] **Step 3: `src/lib/market/index.ts` 전체 교체 — 토스 실패 시 Yahoo 런타임 자동 폴백**
+
+```ts
+import { MarketData } from './types'
+import { tossProvider } from './toss'
+import { yahooProvider } from './yahoo'
+
+/** 기본 제공자는 env(MARKET_PROVIDER), name 인자로 요청별 오버라이드 가능(데모/비교용) */
+function pick(name?: string): MarketData {
+  const p = name ?? process.env.MARKET_PROVIDER
+  return p === 'yahoo' ? yahooProvider : tossProvider
+}
+
+/** 주 제공자 실패 시 Yahoo로 자동 폴백 — 서버리스 배포에서 토스 IP 정책 등으로 죽지 않게 */
+async function withFallback<T>(primary: MarketData, fn: (p: MarketData) => Promise<T>): Promise<T> {
+  try {
+    return await fn(primary)
+  } catch (e) {
+    if (primary === yahooProvider) throw e
+    return await fn(yahooProvider)
+  }
+}
+
+export const getQuote = (code: string, provider?: string) =>
+  withFallback(pick(provider), (p) => p.getQuote(code))
+export const getDailyCandles = (code: string, days?: number, provider?: string) =>
+  withFallback(pick(provider), (p) => p.getDailyCandles(code, days))
+export const getDailyCloses = async (code: string, days?: number, provider?: string) =>
+  (await getDailyCandles(code, days, provider)).map((c) => c.close)
+
+export type { Quote, Candle, MarketData } from './types'
+```
+
+- [ ] **Step 4: `src/app/api/chat/route.ts`의 도구 실행 블록(39-45행)을 다음으로 교체**
 
 ```ts
       const results = await Promise.all(
@@ -567,16 +602,16 @@ export function buildSystem(ctx: ChatContext): string {
 
 (17행의 `const usedTools: { name: string; input: any }[] = []`는 `const usedTools: { name: string; input: any; output?: any }[] = []`로 변경)
 
-- [ ] **Step 4: 전체 테스트 + 빌드 확인**
+- [ ] **Step 5: 전체 테스트 + 빌드 확인**
 
 Run: `npx vitest run && npm run build`
 Expected: 테스트 전부 PASS, 빌드 성공
 
-- [ ] **Step 5: 커밋**
+- [ ] **Step 6: 커밋**
 
 ```bash
-git add src/lib/tools.ts src/lib/persona.ts src/app/api/chat/route.ts
-git commit -m "feat(proto): 에이전트 도구 확장 — resolve_stock·update_frame, 도구 출력 반환, 무프레임 가드"
+git add src/lib/tools.ts src/lib/persona.ts src/lib/market/index.ts src/app/api/chat/route.ts
+git commit -m "feat(proto): 에이전트 도구 확장 — resolve_stock·update_frame, 도구 출력, 무프레임 가드, Yahoo 자동 폴백"
 ```
 
 ---
