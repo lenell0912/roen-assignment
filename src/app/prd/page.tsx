@@ -36,6 +36,9 @@ function TopBar() {
         <FrameLogo />
         <span aria-hidden className="h-6 w-px bg-gray-200" />
         <span className="text-sm font-bold text-[#191919]">Product Requirement Document</span>
+        <Link href="/" className="ml-auto shrink-0 text-sm font-bold bg-[#FFEC47] text-[#191919] px-3.5 py-1.5 rounded-full">
+          프로토타입 →
+        </Link>
       </div>
     </div>
   )
