@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const ctx: ChatContext = context ?? {}
   const system = buildSystem(ctx)
   const convo: any[] = [...messages]
-  const usedTools: { name: string; input: any }[] = []
+  const usedTools: { name: string; input: any; output?: any }[] = []
 
   try {
     for (let i = 0; i < 5; i++) {
@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
 
       const results = await Promise.all(
         toolUses.map(async (t) => {
-          usedTools.push({ name: t.name, input: t.input })
           const out = await runTool(t.name, t.input, { frame: ctx.frame }).catch((e) => ({ error: String(e.message) }))
+          usedTools.push({ name: t.name, input: t.input, output: out })
           return { type: 'tool_result', tool_use_id: t.id, content: JSON.stringify(out) }
         }),
       )
