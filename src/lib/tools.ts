@@ -1,8 +1,21 @@
 import { getQuote } from './market'
 import { getPortfolio, compareToFrame, runBacktest } from './capabilities'
-import { Frame } from './frame'
+import { Frame, rulesFromToolInput } from './frame'
+import { searchStocks } from './stocks'
+
+const hasFrame = (f?: Frame) => !!f && f.rules.length > 0
 
 export const TOOLS = [
+  {
+    name: 'resolve_stock',
+    description:
+      '종목 이름·별칭으로 6자리 종목코드를 찾는다. 사용자가 종목을 이름으로 말하면 다른 도구보다 먼저 호출해라. matches가 비면 코드를 직접 물어봐라.',
+    input_schema: {
+      type: 'object',
+      properties: { query: { type: 'string', description: '종목 이름/별칭/코드' } },
+      required: ['query'],
+    },
+  },
   {
     name: 'get_quote',
     description: '종목의 실시간 현재가/등락률 조회',
@@ -20,21 +33,66 @@ export const TOOLS = [
   },
   {
     name: 'run_backtest',
-    description: '사용자 프레임의 이동평균 규칙을 종목 과거 데이터에 대입(회고). 규칙대로 매매 시 성과 vs 버이홀드.',
+    description: '사용자 프레임의 이동평균 규칙을 종목 과거 데이터에 대입(회고). 규칙대로 매매 시 성과 vs 바이앤홀드.',
     input_schema: { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] },
+  },
+  {
+    name: 'update_frame',
+    description:
+      '대화에서 사용자와 합의된 매매 원칙을 저장한다. 규칙을 새로 만들었거나 다듬었으면 반드시 호출. rules는 기존을 포함한 전체 교체본이다. 이동평균/고점추격/쏠림 규칙엔 check를 붙이면 자동 대조가 가능해진다.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        rules: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              kind: { type: 'string', enum: ['buy', 'sell', 'risk'] },
+              text: { type: 'string', description: '사용자 언어의 규칙 한 문장' },
+              check: {
+                type: 'object',
+                description:
+                  '자동체크(선택): {"type":"sma_cross","fast":5,"slow":20} | {"type":"price_vs_high","window":60,"minPctBelowHigh":10} | {"type":"sector_concentration","maxPct":40}',
+              },
+            },
+            required: ['kind', 'text'],
+          },
+        },
+      },
+      required: ['rules'],
+    },
   },
 ] as const
 
-export async function runTool(name: string, input: any, ctx: { frame?: Frame }): Promise<any> {
+export async function runTool(
+  name: string,
+  input: any,
+  ctx: { frame?: Frame; setFrame?: (f: Frame) => void },
+): Promise<any> {
   switch (name) {
+    case 'resolve_stock':
+      return { matches: searchStocks(String(input?.query ?? ''), 5) }
     case 'get_quote':
-      return await getQuote(input.code)
+      return await getQuote(String(input?.code ?? ''))
     case 'get_portfolio':
       return getPortfolio()
     case 'compare_to_frame':
-      return await compareToFrame(input.code, ctx.frame)
+      if (!hasFrame(ctx.frame))
+        return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 대조 대신 팩트 브리핑(get_quote)을 하고, 원칙부터 만들자고 제안해라.' }
+      return await compareToFrame(String(input?.code ?? ''), ctx.frame)
     case 'run_backtest':
-      return await runBacktest(input.code, ctx.frame)
+      if (!hasFrame(ctx.frame))
+        return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 원칙부터 만들자고 제안해라.' }
+      return await runBacktest(String(input?.code ?? ''), ctx.frame)
+    case 'update_frame': {
+      // 저장 자체는 클라이언트가 한다(localStorage). 서버는 실제로 반영될 정제본 기준으로 정직하게 보고한다.
+      const rules = rulesFromToolInput(input)
+      const checksApplied = rules.filter((r) => r.check).length
+      const dropped = (Array.isArray(input?.rules) ? input.rules.length : 0) - rules.length
+      if (rules.length && ctx.setFrame) ctx.setFrame({ rules, updatedAt: new Date().toISOString() })
+      return { saved: rules.length > 0, count: rules.length, checksApplied, dropped }
+    }
     default:
       throw new Error(`unknown tool ${name}`)
   }

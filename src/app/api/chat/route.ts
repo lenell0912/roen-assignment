@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildSystem, ChatContext } from '@/lib/persona'
 import { TOOLS, runTool } from '@/lib/tools'
+import { searchStocks } from '@/lib/stocks'
 
 const client = new Anthropic()
 const MODEL = 'claude-sonnet-5'
@@ -11,10 +12,15 @@ export async function POST(req: NextRequest) {
     messages: { role: 'user' | 'assistant'; content: any }[]
     context?: ChatContext
   }
-  const ctx: ChatContext = context ?? {}
+  // 클라이언트가 보낸 code/name은 신뢰하지 않는다 — code는 6자리 숫자만 통과시키고
+  // name은 서버 사전(searchStocks)에서 다시 도출한다. 그래야 임의 텍스트가 시스템 프롬프트에 그대로 섞이지 않는다.
+  const rawCode = typeof context?.code === 'string' && /^\d{6}$/.test(context.code) ? context.code : undefined
+  const safeName = rawCode ? searchStocks(rawCode, 1)[0]?.name : undefined
+  const ctx: ChatContext = { code: rawCode, name: safeName, frame: context?.frame }
   const system = buildSystem(ctx)
   const convo: any[] = [...messages]
-  const usedTools: { name: string; input: any }[] = []
+  const usedTools: { name: string; input: any; output?: any }[] = []
+  let frame = ctx.frame
 
   try {
     for (let i = 0; i < 5; i++) {
@@ -36,10 +42,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ reply: text, usedTools })
       }
 
+      const base = usedTools.length
       const results = await Promise.all(
-        toolUses.map(async (t) => {
-          usedTools.push({ name: t.name, input: t.input })
-          const out = await runTool(t.name, t.input, { frame: ctx.frame }).catch((e) => ({ error: String(e.message) }))
+        toolUses.map(async (t, i) => {
+          const out = await runTool(t.name, t.input, {
+            frame,
+            setFrame: (f) => {
+              frame = f
+            },
+          }).catch((e) => {
+            console.error('[tool]', t.name, e instanceof Error ? e.message : String(e))
+            return { error: 'tool_failed' }
+          })
+          usedTools[base + i] = { name: t.name, input: t.input, output: out }
           return { type: 'tool_result', tool_use_id: t.id, content: JSON.stringify(out) }
         }),
       )
@@ -47,6 +62,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ reply: '(생각이 길어졌어. 다시 물어봐 줄래?)', usedTools })
   } catch (e: any) {
-    return NextResponse.json({ error: String(e.message) }, { status: 502 })
+    console.error('[chat]', e instanceof Error ? e.message : String(e))
+    return NextResponse.json({ error: '일시적인 오류가 났어. 다시 시도해줘.' }, { status: 502 })
   }
 }
