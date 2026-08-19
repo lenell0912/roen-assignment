@@ -238,8 +238,8 @@ export interface DemoStep {
 export const DEMO_STEPS: DemoStep[] = [
   {
     id: 'open',
-    label: 'FAB으로 코파일럿 호출',
-    narration: '폰 화면 오른쪽 아래 노란 버튼(FAB)을 눌러 코파일럿을 불러보세요. 실서비스에선 페이증권 앱 어느 화면에나 떠 있습니다.',
+    label: 'FAB으로 Frame 호출',
+    narration: '폰 화면 오른쪽 아래 노란 버튼(FAB)을 눌러 Frame을 불러보세요. 실서비스에선 페이증권 앱 어느 화면에나 떠 있습니다.',
   },
   {
     id: 'frame',
@@ -264,7 +264,7 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     id: 'context',
     label: '⭐ 종목상세에서 다시 불러보기',
-    narration: '코파일럿을 닫고, 홈에서 종목을 검색해 상세 화면으로 간 뒤 FAB을 다시 눌러보세요 — 보고 있던 화면의 맥락을 알고 옵니다.',
+    narration: 'Frame을 닫고, 홈에서 종목을 검색해 상세 화면으로 간 뒤 FAB을 다시 눌러보세요 — 보고 있던 화면의 맥락을 알고 옵니다.',
     bonus: true,
   },
 ]
@@ -522,7 +522,7 @@ export interface ChatContext {
 
 export function buildSystem(ctx: ChatContext): string {
   const lines: string[] = [
-    `너는 카카오페이증권의 'AI 투자 코파일럿'이다. 페르소나는 "친근한 투자 선배".`,
+    `너는 카카오페이증권의 'AI 투자 Frame'이다. 페르소나는 "친근한 투자 선배".`,
     `말투: 반말 섞인 친근·직설. 2030 초보에게 편하게. 한국어로, 간결하게.`,
     ``,
     `[핵심 원칙 — 반드시 지킴]`,
@@ -542,7 +542,7 @@ export function buildSystem(ctx: ChatContext): string {
     const label = ctx.name ? `${ctx.name}(${ctx.code})` : ctx.code
     lines.push(
       ``,
-      `[현재 화면 맥락] 사용자는 페이증권 앱에서 ${label} 화면을 보다가 코파일럿을 불렀다. 첫 응답에서 이 맥락을 자연스럽게 인지하고 있음을 보여줘라.`,
+      `[현재 화면 맥락] 사용자는 페이증권 앱에서 ${label} 화면을 보다가 Frame을 불렀다. 첫 응답에서 이 맥락을 자연스럽게 인지하고 있음을 보여줘라.`,
     )
   }
   if (ctx.frame && ctx.frame.rules.length) {
@@ -661,7 +661,7 @@ export function Fab({ onClick, pulse }: { onClick: () => void; pulse?: boolean }
   return (
     <button
       onClick={onClick}
-      aria-label="코파일럿 열기"
+      aria-label="Frame 열기"
       className={`absolute right-4 bottom-24 z-30 w-14 h-14 rounded-full bg-[#fae100] shadow-lg text-2xl grid place-items-center hover:scale-105 transition ${
         pulse ? 'animate-pulse ring-4 ring-yellow-300' : ''
       }`}
@@ -688,7 +688,7 @@ export type AgentCtx = { code?: string; name?: string }
 
 export function DemoStage() {
   const [screen, setScreen] = useState<Screen>({ kind: 'home' })
-  const [agentCtx, setAgentCtx] = useState<AgentCtx | null>(null) // null = 코파일럿 닫힘
+  const [agentCtx, setAgentCtx] = useState<AgentCtx | null>(null) // null = Frame 닫힘
   const [frame, setFrame] = useState<Frame | null>(null) // null = 내 원칙 아직 없음(예시만 존재)
 
   // SSR 불일치 방지: 마운트 후 localStorage에서 읽는다
@@ -946,7 +946,7 @@ export function StockScreen({ code, name, onBack }: { code: string; name: string
       </div>
 
       <div className="flex-1 px-4 py-3 text-xs text-gray-400">
-        결정하기 전에, 오른쪽 아래 코파일럿에게 내 원칙에 맞는지 물어보세요.
+        결정하기 전에, 오른쪽 아래 Frame에게 내 원칙에 맞는지 물어보세요.
       </div>
 
       {toast && (
@@ -957,8 +957,8 @@ export function StockScreen({ code, name, onBack }: { code: string; name: string
 
       {/* 결정의 순간 — 히어로 장면 */}
       <div className="flex h-14 shrink-0">
-        <button onClick={() => mock('주문은 프로토타입 범위 밖 — 코파일럿에게 먼저 물어보세요')} className="flex-1 bg-blue-500 text-white font-semibold">판매</button>
-        <button onClick={() => mock('주문은 프로토타입 범위 밖 — 코파일럿에게 먼저 물어보세요')} className="flex-1 bg-red-500 text-white font-semibold">구매</button>
+        <button onClick={() => mock('주문은 프로토타입 범위 밖 — Frame에게 먼저 물어보세요')} className="flex-1 bg-blue-500 text-white font-semibold">판매</button>
+        <button onClick={() => mock('주문은 프로토타입 범위 밖 — Frame에게 먼저 물어보세요')} className="flex-1 bg-red-500 text-white font-semibold">구매</button>
       </div>
     </div>
   )
@@ -1137,7 +1137,7 @@ function openingText(hasFrame: boolean, ctx: ChatCtx): string {
   const where = ctx.name ? `지금 ${ctx.name} 화면 보고 있었네? ` : ''
   if (!hasFrame)
     return (
-      `${where}반가워! 난 답을 주는 봇이 아니라, 너만의 매매 원칙을 같이 만들고 지키게 돕는 코파일럿이야.\n` +
+      `${where}반가워! 난 답을 주는 봇이 아니라, 너만의 매매 원칙을 같이 만들고 지키게 돕는 Frame이야.\n` +
       `아직 원칙이 없네 — 그것부터 만들어볼까? 5분이면 돼. 평소에 뭘 보고 사고파는지 편하게 말해줘도 좋아.`
     )
   return `${where}네 원칙 기준으로 도와줄게. 종목을 물어보면 실데이터로 원칙에 대조하고, 반대 근거까지 보여줄게.`
@@ -1271,7 +1271,7 @@ export function ChatPage({
             })}
           </div>
         ))}
-        {loading && <div className="text-xs text-gray-400">코파일럿이 실데이터로 확인 중…</div>}
+        {loading && <div className="text-xs text-gray-400">Frame이 실데이터로 확인 중…</div>}
       </div>
 
       {/* 상태 적응 칩 */}
@@ -1469,7 +1469,7 @@ export function MiniApp({
             className="block mx-auto w-10 h-1.5 rounded-full bg-gray-300 mb-2"
           />
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sm">🧭 AI 투자 코파일럿</span>
+            <span className="font-bold text-sm">🧭 AI 투자 Frame</span>
             {context.name && (
               <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">📍 {context.name}</span>
             )}
@@ -1634,7 +1634,7 @@ function providerBadge(tossLive: boolean | null): string {
 }
 
 const STATIC_BADGES: { label: string; kind: 'live' | 'mock' }[] = [
-  { label: '코파일럿 응답·대조·백테스트 — LLM + 실데이터 라이브', kind: 'live' },
+  { label: 'Frame 응답·대조·백테스트 — LLM + 실데이터 라이브', kind: 'live' },
   { label: '원칙·판단 기록 — 브라우저 로컬 저장(실동작)', kind: 'live' },
   { label: '홈 화면·주문·커뮤니티 공유 — 목업(연출)', kind: 'mock' },
 ]

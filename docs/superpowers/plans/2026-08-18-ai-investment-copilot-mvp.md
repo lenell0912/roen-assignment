@@ -1,8 +1,8 @@
-# AI 투자 코파일럿 MVP — Implementation Plan
+# AI 투자 Frame MVP — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 카카오페이증권 앱 화면(스크린샷) 위에 뜨는 플로팅 코파일럿 — "이거 사도 돼?" 대화 + "유튜브 영상 → 내 전략" 실동작을, 실제 시장 데이터(토스증권 오픈 API 주 제공자, Yahoo 폴백)와 Claude로 구현한다.
+**Goal:** 카카오페이증권 앱 화면(스크린샷) 위에 뜨는 플로팅 Frame — "이거 사도 돼?" 대화 + "유튜브 영상 → 내 전략" 실동작을, 실제 시장 데이터(토스증권 오픈 API 주 제공자, Yahoo 폴백)와 Claude로 구현한다.
 
 **Architecture:** Next.js(App Router, TS) 단일 앱. **MarketData provider 추상화**(토스증권=주, Yahoo=무계좌 폴백) 위에서 서버 route handler가 (a) 시세·일봉, (b) 유튜브 자막, (c) Claude(페르소나 대화 + 기법 추출)를 감싼다. **LLM은 "이해/추출"만, 신호 계산은 결정론적 코드**로 분리해 신뢰성을 확보한다. 지원하지 않는 기법은 신호를 지어내지 않고 요약·한계만 제공(정직 처리). 클라이언트는 스크린샷 배경 위 FAB + 바텀시트 챗.
 
@@ -30,7 +30,7 @@ src/
       schema.ts        # 추출 전략 스키마(zod) + 지원 전략 타입
       extract.ts       # 자막 → 전략 규칙 (Claude)
     transcript.ts      # 유튜브 자막 추출
-    persona.ts         # 코파일럿 시스템 프롬프트 + 원칙
+    persona.ts         # Frame 시스템 프롬프트 + 원칙
     tools.ts           # Claude tool 정의 + 실행 매핑
     portfolio.ts       # 데모용 가상 포트폴리오 + 비중 계산
   app/
@@ -586,7 +586,7 @@ export function sectorWeights(hs = DEMO_PORTFOLIO) {
 
 ```ts
 // src/lib/persona.ts
-export const SYSTEM_PROMPT = `너는 카카오페이증권의 AI 투자 코파일럿이다. 페르소나는 "친근한 투자 선배".
+export const SYSTEM_PROMPT = `너는 카카오페이증권의 AI 투자 Frame이다. 페르소나는 "친근한 투자 선배".
 말투: 반말 섞인 친근·직설. 2030 초보에게 편하게.
 반드시 지킬 원칙:
 1) 절대 "사라/팔아라"로 대신 결정하지 않는다. 사용자의 판단을 보완한다.
@@ -620,7 +620,7 @@ export async function runTool(name: string, input: any) {
 
 ---
 
-## Task 9: 코파일럿 대화 `/api/chat` (tool-use 루프)
+## Task 9: Frame 대화 `/api/chat` (tool-use 루프)
 
 **Files:** Create: `src/app/api/chat/route.ts`
 
@@ -659,7 +659,7 @@ export async function POST(req: NextRequest) {
 ```
 
 - [ ] **Step 2: 검증** — curl로 `{"messages":[{"role":"user","content":"삼성전자 지금 사도 돼?"}],"context":{"code":"005930"}}` → 페르소나 답변 + 도구 사용 확인
-- [ ] **Step 3: 커밋** — `git commit -am "feat: 코파일럿 대화 API (tool-use 루프 + 화면 맥락)"`
+- [ ] **Step 3: 커밋** — `git commit -am "feat: Frame 대화 API (tool-use 루프 + 화면 맥락)"`
 
 ---
 
@@ -733,7 +733,7 @@ export function Fab({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick}
       className="fixed left-1/2 -translate-x-1/2 bottom-24 z-20 w-14 h-14 rounded-full bg-[#fae100] shadow-lg text-2xl"
-      style={{ marginLeft: 150 }} aria-label="코파일럿 열기">🧭</button>
+      style={{ marginLeft: 150 }} aria-label="Frame 열기">🧭</button>
   )
 }
 ```
@@ -787,7 +787,7 @@ export function Chat({ code }: { code?: string }) {
       <div className="flex-1 p-3 space-y-2 text-sm">
         {msgs.map((m,i)=>(<div key={i} className={m.role==='user'?'text-right':''}>
           <span className={`inline-block px-3 py-2 rounded-2xl ${m.role==='user'?'bg-[#fae100]':'bg-gray-100'}`}>{m.content}</span></div>))}
-        {loading && <div className="text-gray-400 text-xs">코파일럿이 생각 중…</div>}
+        {loading && <div className="text-gray-400 text-xs">Frame이 생각 중…</div>}
       </div>
       <div className="p-2 border-t flex gap-2">
         <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()}
@@ -800,7 +800,7 @@ export function Chat({ code }: { code?: string }) {
 ```
 
 - [ ] **Step 4: 검증** — 시트 열고 "삼성전자 지금 사도 돼?" → 페르소나 답변(포트폴리오 비중 언급) 확인
-- [ ] **Step 5: 커밋** — `git commit -am "feat: FAB + 바텀시트 + 코파일럿 챗 UI"`
+- [ ] **Step 5: 커밋** — `git commit -am "feat: FAB + 바텀시트 + Frame 챗 UI"`
 
 ---
 
@@ -896,7 +896,7 @@ export function CommunityCard() {
 
 ## Self-Review 결과
 
-- **Spec 커버리지:** 코파일럿 대화(Task 9,11) · 영상→내 전략(Task 5~7,12) · 실시세(토스 주+Yahoo 폴백, Task 4) · 개인위키 라이트(Task 12) · 커뮤니티 목업(Task 12) · 플로팅 진입점/화면맥락(Task 10,11) · 페르소나·원칙(Task 8) · 데모 포트폴리오(Task 8) · 면책/PRD/AI활용(Task 13) 모두 매핑됨. 로드맵 항목(백테스트·자동주문·코치·카톡 실연동)은 의도적으로 구현 제외(PRD 기술만).
+- **Spec 커버리지:** Frame 대화(Task 9,11) · 영상→내 전략(Task 5~7,12) · 실시세(토스 주+Yahoo 폴백, Task 4) · 개인위키 라이트(Task 12) · 커뮤니티 목업(Task 12) · 플로팅 진입점/화면맥락(Task 10,11) · 페르소나·원칙(Task 8) · 데모 포트폴리오(Task 8) · 면책/PRD/AI활용(Task 13) 모두 매핑됨. 로드맵 항목(백테스트·자동주문·코치·카톡 실연동)은 의도적으로 구현 제외(PRD 기술만).
 - **타입 일관성:** `evaluateSmaCross`/`Strategy`/`Holding`/`runTool`/`MarketData`/`getQuote`/`getDailyCloses` 명칭이 태스크 간 일치. 시세는 전부 `@/lib/market`에서 import(kis 잔재 없음). 전략 `type`은 `sma_cross`(신호 계산) | `unsupported`(요약·한계만) 2종을 스키마·추출·파이프라인·UI 4곳에서 일관 처리.
 - **정직 처리 확인:** 미지원 기법은 `/api/strategy`가 `signal:null, supported:false` 반환 → `StrategyResult`가 신호 대신 "미지원" 안내 렌더(신호 조작 없음).
 - **연결 검증 완료(2026-08-18):** Anthropic(`claude-sonnet-5` 200) · 토스 토큰+`/api/v1/prices`+`/api/v1/candles`(삼성전자 실데이터) · Yahoo(무계좌) 모두 실호출 성공.
