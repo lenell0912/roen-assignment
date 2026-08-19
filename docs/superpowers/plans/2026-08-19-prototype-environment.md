@@ -1573,7 +1573,36 @@ git commit -m "feat(proto): MiniApp — 바텀시트→풀프레임, 대화+위�
 
 **Files:**
 - Create: `src/app/components/DocentPanel.tsx`
+- Modify: `src/app/api/health/route.ts` (토스 연결 라이브 프로브)
 - Modify: `src/app/components/DemoStage.tsx` (패널 배치 + FAB/핫스팟 펄스)
+
+- [ ] **Step 0: `src/app/api/health/route.ts` 전체 교체 — 토스 연결 실확인**
+
+토스 연동은 이 과제의 어필 포인트다. 배지가 "설정값"이 아니라 **실제 연결 상태**를 보여주도록, health가 토스 시세를 1회 프로브한다(5초 타임아웃). 성공 → 토스 실호출 배지, 실패(IP 정책 등) → "Yahoo 자동 폴백 중 + 토스 연동 코드는 검증 완료" 배지.
+
+```ts
+import { NextResponse } from 'next/server'
+import { tossProvider } from '@/lib/market/toss'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET() {
+  const configured = process.env.MARKET_PROVIDER ?? 'toss'
+  let tossLive = false
+  try {
+    const q = await Promise.race([
+      tossProvider.getQuote('005930'),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000)),
+    ])
+    tossLive = Number((q as any)?.price) > 0
+  } catch {
+    tossLive = false
+  }
+  return NextResponse.json({ ok: true, provider: configured, tossLive })
+}
+```
+
+(기존 health 파일을 먼저 읽고, 기존 응답 필드가 더 있으면 유지한 채 `tossLive`를 추가하는 방식도 허용 — 핵심은 `tossLive` 불리언.)
 
 - [ ] **Step 1: `src/app/components/DocentPanel.tsx` 생성**
 
@@ -1594,8 +1623,14 @@ export function useDemoProgress(): DemoProgress {
   return p
 }
 
-const BADGES: { label: string; kind: 'live' | 'mock' }[] = [
-  { label: '시세·차트 — 토스 오픈API 실호출(Yahoo 폴백)', kind: 'live' },
+// 시세 제공자 배지는 설정값이 아니라 실제 연결 상태(/api/health의 tossLive)를 보여준다 — 토스 연동 어필 + 정직성
+function providerBadge(tossLive: boolean | null): string {
+  if (tossLive === null) return '시세·차트 — 제공자 연결 확인 중…'
+  if (tossLive) return '시세·차트 — 토스증권 오픈API 실호출 중'
+  return '시세·차트 — 토스는 서버 IP 정책으로 차단 → Yahoo 자동 폴백 중 (토스 연동은 코드·로컬 실호출 검증 완료)'
+}
+
+const STATIC_BADGES: { label: string; kind: 'live' | 'mock' }[] = [
   { label: '코파일럿 응답·대조·백테스트 — LLM + 실데이터 라이브', kind: 'live' },
   { label: '원칙·판단 기록 — 브라우저 로컬 저장(실동작)', kind: 'live' },
   { label: '홈 화면·주문·커뮤니티 공유 — 목업(연출)', kind: 'mock' },
@@ -1605,6 +1640,17 @@ export function DocentPanel() {
   const progress = useDemoProgress()
   const next = nextStep(progress)
   const done = DEMO_STEPS.filter((s) => progress[s.id]).length
+  const [tossLive, setTossLive] = useState<boolean | null>(null)
+  useEffect(() => {
+    fetch('/api/health')
+      .then((r) => r.json())
+      .then((j) => setTossLive(!!j.tossLive))
+      .catch(() => setTossLive(false))
+  }, [])
+  const BADGES: { label: string; kind: 'live' | 'mock' }[] = [
+    { label: providerBadge(tossLive), kind: 'live' },
+    ...STATIC_BADGES,
+  ]
 
   function onReset() {
     if (!confirm('원칙·판단 기록·진행 상태를 모두 초기화할까요?')) return
