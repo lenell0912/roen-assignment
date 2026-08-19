@@ -614,6 +614,9 @@ git add src/lib/tools.ts src/lib/persona.ts src/lib/market/index.ts src/app/api/
 git commit -m "feat(proto): 에이전트 도구 확장 — resolve_stock·update_frame, 도구 출력, 무프레임 가드, Yahoo 자동 폴백"
 ```
 
+> **리뷰 후속(별도 커밋)**: 폴백 throw 시맨틱(NaN/빈배열)·fetch 타임아웃·Yahoo 코스닥(.KQ) 폴백·Yahoo 슬라이스·update_frame 정직 보고(rulesFromToolInput)·턴 내 프레임 갱신·에러/이름 새니타이즈 + `src/test/tools.test.ts`.
+> **의도적으로 미룸(프로토타입 스코프)**: 제공자 서킷브레이커/다운 메모이제이션, 토큰 in-flight dedupe, update_frame check의 oneOf JSON 스키마 재구성, 데이터 소스 마커(source 필드), max_tokens 트렁케이션 감지. 필요 시 Phase 2.
+
 ---
 
 ### Task 5: 폰 프레임 셸 + 스테이지 골격
