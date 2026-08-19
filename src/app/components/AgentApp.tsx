@@ -3,7 +3,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Frame } from '@/lib/frame'
 import { loadFrame } from '@/lib/frameStore'
-import { ChatPage } from './ChatPage'
 import { FramePage } from './FramePage'
 import { DecisionPage } from './DecisionPage'
 import { RetroPage } from './RetroPage'
@@ -84,7 +83,7 @@ export function AgentApp({ onExit }: { onExit: () => void }) {
       {/* 본문 + 시나리오 패널 */}
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 min-w-0 border-r">
-          {tab === 'chat' && <ChatPage code={code} frame={frame} seed={seed} onOpenPage={(t) => setTab(t as Tab)} />}
+          {tab === 'chat' && <div />}
           {tab === 'frame' && <FramePage frame={frame} setFrame={setFrame} />}
           {tab === 'decision' && <DecisionPage code={code} frame={frame} />}
           {tab === 'retro' && <RetroPage code={code} frame={frame} setFrame={setFrame} />}
