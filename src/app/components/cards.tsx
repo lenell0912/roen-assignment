@@ -41,7 +41,7 @@ export function BacktestCard({ result, onExpand }: { result: any; onExpand: () =
   if (result?.supported === false) return null
   const r = result?.result
   if (!r) return null
-  const fmt = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
+  const fmt = (v: number | null | undefined) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`)
   return (
     <div className="mt-1.5 border rounded-xl bg-white p-3 text-xs max-w-[88%]">
       <div className="font-semibold">🔁 회고 — 내 원칙({result.params.fast}/{result.params.slow} 교차)을 과거에 대입</div>
