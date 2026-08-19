@@ -89,3 +89,19 @@ export const EXAMPLE_FRAME: Frame = {
   ],
   updatedAt: '(예시)',
 }
+
+// ── 대화(update_frame 도구) 입력 → 안전한 Rule[] 정제 ──
+const RULE_KINDS: RuleKind[] = ['buy', 'sell', 'risk']
+const CHECK_TYPES = ['sma_cross', 'price_vs_high', 'sector_concentration']
+
+export function rulesFromToolInput(input: any): Rule[] {
+  const arr = Array.isArray(input?.rules) ? input.rules : []
+  return arr
+    .filter((r: any) => r && RULE_KINDS.includes(r.kind) && typeof r.text === 'string' && r.text.trim())
+    .map((r: any, i: number) => ({
+      id: `r${Date.now()}_${i}`,
+      kind: r.kind as RuleKind,
+      text: r.text.trim(),
+      check: r.check && CHECK_TYPES.includes(r.check.type) ? (r.check as MachineCheck) : undefined,
+    }))
+}
