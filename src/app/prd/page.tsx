@@ -15,6 +15,7 @@ export default function PRD() {
         <Hypotheses />
         <Scenario />
         <Solution />
+        <Composition />
         <Goals />
         <Novelty />
         <Differentiation />
@@ -214,6 +215,97 @@ function Solution() {
         <div className="font-bold">{stages[i].t}</div>
         <div className="mt-1 text-sm text-gray-600">{stages[i].d}</div>
       </Card>
+    </section>
+  )
+}
+
+function Composition() {
+  const agentFns = [
+    ['프레임 끌어내기', '소크라테스식 되묻기로 매매 규칙을 대화에서 추출'],
+    ['실데이터 대조 + 반대근거', '아무 종목을 내 프레임에 대조하고 악마의 변호인'],
+    ['백테스트-라이트 회고', '내 규칙을 과거 데이터에 대입해 되먹임'],
+    ['프레임 진화(엣지 채점)', '규칙별 성과를 채점해 프레임 개정 제안'],
+  ]
+  const pillars = [
+    ['🧭', 'Frame 에이전트', '프레임을 끌어내고, 결정 순간 실데이터로 대조하는 촉진자. Human-in-the-loop 도구사용 에이전트입니다.'],
+    ['🗂', '개인 위키 = 컨텍스트 레이어', '프레임(원칙) + 판단 기록 + 회고가 쌓이는 저장소. 쓸수록 개인화가 깊어지는 데이터 해자입니다.'],
+    ['👥', '커뮤니티 다리', '프레임·근거 공유와 멘탈 케어. 발행은 사용자가 트리거하며, 지금은 라이트/목업입니다.'],
+  ]
+  return (
+    <section className="space-y-4">
+      <H2 id="composition" kicker="Architecture · 제품 구성" title="무엇으로 이루어져 있나요" />
+      <p className="text-gray-600 text-sm">
+        위 루프는 페이증권 앱 안에서 이렇게 담깁니다. 어느 화면에서든 <b>FAB 한 번</b>으로 불러, 대화와 위키 두 축으로 루프를 돌립니다.
+      </p>
+
+      {/* 레이어드 구성도 */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 space-y-2">
+        {/* 진입 */}
+        <div className="rounded-xl bg-[#F7F8FA] p-3 text-center">
+          <div className="text-[11px] font-bold text-gray-400">진입 · 페이증권 앱 내</div>
+          <div className="mt-1 text-sm font-bold">
+            홈/종목상세 <span className="text-gray-300">→</span> <span className="text-[#191919]">🟡 FAB</span>{' '}
+            <span className="text-gray-300">→</span> 바텀시트 <span className="text-gray-300">→</span> 미니앱
+          </div>
+        </div>
+        <FlowArrow />
+        {/* 미니앱 2축 */}
+        <div className="rounded-xl bg-[#191919] p-3">
+          <div className="text-[11px] font-bold text-gray-400 text-center">미니앱 (에이전트 기반) · 대화 + 위키 2축</div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-white/10 p-3">
+              <div className="text-sm font-bold text-white">💬 에이전트와의 대화 (루프 형태)</div>
+              <div className="mt-0.5 text-xs text-gray-300 leading-relaxed">
+                사용자만의 투자 방법을 만들고, 실제 투자법과 매매를 대조·회고하여 개선하는 루프로 나만의 매매법을 고도화하는 에이전트 루프
+              </div>
+            </div>
+            <div className="rounded-lg bg-white/10 p-3">
+              <div className="text-sm font-bold text-white">🗂 LLM 위키 (컨텍스트 축적)</div>
+              <div className="mt-0.5 text-xs text-gray-300 leading-relaxed">
+                행동과 판단을 기록·회고하는 루프로 사용자만의 히스토리가 쌓이고, 이것이 에이전트 개인화와 매매법 개선의 맥락이 됨
+              </div>
+            </div>
+          </div>
+        </div>
+        <FlowArrow />
+        {/* 에이전트 기능 (Sonnet 기반) */}
+        <div className="rounded-xl bg-[#FFEC47] p-3">
+          <div className="text-[11px] font-bold text-[#191919]/50 text-center">에이전트 · Claude Sonnet 기반 기능</div>
+          <div className="mt-2 grid sm:grid-cols-2 gap-1.5">
+            {agentFns.map(([t, d]) => (
+              <div key={t} className="rounded-lg bg-white/70 px-3 py-2">
+                <div className="text-xs font-bold text-[#191919]">{t}</div>
+                <div className="mt-0.5 text-[11px] text-[#191919]/60 leading-snug">{d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <FlowArrow />
+        {/* 데이터 */}
+        <div className="rounded-xl bg-[#F7F8FA] p-3 text-center">
+          <div className="text-[11px] font-bold text-gray-400">데이터 · 현재 과제 프로토타입 구성</div>
+          <div className="mt-1 text-sm font-bold">
+            토스증권 오픈 API <span className="text-gray-400 font-medium">(주)</span> <span className="text-gray-300">↔</span> Yahoo Finance{' '}
+            <span className="text-gray-400 font-medium">(폴백)</span>
+          </div>
+          <div className="mt-2 text-[11px] text-gray-500 leading-relaxed">
+            ※ 토스 API의 allow-IP 정책으로 배포 환경에서는 실질적으로 Yahoo Finance API를 호출합니다.
+          </div>
+        </div>
+      </div>
+
+      {/* 3대 기둥 */}
+      <div className="grid md:grid-cols-3 gap-3">
+        {pillars.map(([icon, t, d]) => (
+          <Card key={t}>
+            <div className="text-2xl" aria-hidden>
+              {icon}
+            </div>
+            <div className="mt-1.5 font-bold">{t}</div>
+            <div className="mt-1 text-sm text-gray-600">{d}</div>
+          </Card>
+        ))}
+      </div>
     </section>
   )
 }
@@ -456,6 +548,7 @@ function Goals() {
             <li>자동매매·자동주문을 하지 않습니다 (human-in-the-loop)</li>
             <li>수익률을 보장하거나 예측하지 않습니다</li>
             <li>사용자의 판단을 대체하지 않습니다</li>
+            <li>투자·프레임과 무관한 질문엔 답하지 않습니다 (LLM 범용 남용 차단)</li>
           </ul>
         </Card>
       </div>
@@ -492,6 +585,7 @@ function Risks() {
     ['투자자문 규제', "자문이 아닌 '보완' — 개별 종목 매수·매도 지시 안 함, 면책 고지"],
     ['데이터/자막 한계', '제공자 추상화(토스↔Yahoo 스왑) + 온램프 폴백'],
     ['채택 저항(프레임=노동)', 'AI가 대화로 초안 대신 작성 + 예시 프레임 제공'],
+    ['LLM 남용·프롬프트 인젝션', '도메인 화이트리스트 제한 + 내·외부 지시 무시 + 시스템 프롬프트 비노출'],
   ]
   return (
     <section className="space-y-4">

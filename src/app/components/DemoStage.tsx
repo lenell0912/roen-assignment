@@ -31,7 +31,7 @@ export function DemoStage() {
     if (ctx.code) markStep('context')
   }
 
-  const fabPulse = next?.id === 'open' || (next?.id === 'context' && screen.kind === 'stock')
+  // FAB 펄스는 제거 — 유도는 도슨트 텍스트가 담당한다 (정적 FAB)
   const searchPulse = next?.id === 'context' && screen.kind === 'home'
 
   return (
@@ -48,10 +48,7 @@ export function DemoStage() {
           <StockScreen code={screen.code} name={screen.name} onBack={() => setScreen({ kind: 'search' })} />
         )}
         {screen.kind !== 'search' && agentCtx === null && (
-          <Fab
-            onClick={() => openAgent(screen.kind === 'stock' ? { code: screen.code, name: screen.name } : {})}
-            pulse={fabPulse}
-          />
+          <Fab onClick={() => openAgent(screen.kind === 'stock' ? { code: screen.code, name: screen.name } : {})} />
         )}
         {agentCtx !== null && (
           <MiniApp context={agentCtx} frame={frame} onFrameChange={setFrame} onClose={() => setAgentCtx(null)} />

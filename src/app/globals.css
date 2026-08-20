@@ -94,6 +94,23 @@ body {
 }
 
 /* ─────────────────────────────────────────────
+   iOS-style overlay scrollbar — 영역 미확보, 호버 시 얇게 노출
+   ───────────────────────────────────────────── */
+.ios-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* 스크롤바가 레이아웃 공간을 예약하지 않도록 완전 숨김 (우측 흰 띠 제거) */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.ios-scroll::-webkit-scrollbar {
+  /* Chromium/Safari: 폭 0 → 공간 미예약, 콘텐츠가 프레임 끝까지 */
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* ─────────────────────────────────────────────
    Component primitives (KakaoPay)
    ───────────────────────────────────────────── */
 .kp-card {
