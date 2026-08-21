@@ -7,6 +7,7 @@ import { addRecord } from '@/lib/records'
 import { markStep } from '@/lib/demo'
 import { loadChat, saveChat } from '@/lib/chat'
 import { BY_KEY, moreKeys, buildRule, RULE_LIBRARY } from '@/lib/ruleLibrary'
+import { SIGNED_SPLIT, signDirection } from '@/lib/richText'
 import { CompareCard, ReviewCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
@@ -56,11 +57,23 @@ function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
   ]
 }
 
-// 에이전트 발화용 경량 마크다운 — **볼드**, 불릿(-/•), 번호목록, 줄바꿈만 처리
-function renderInline(text: string): React.ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((p, i) => {
+// 방향성 수치(부호 %·화살표)를 한국 증시 관례로 색칠 — 상승 빨강, 하락 파랑.
+function colorizeSigned(text: string, keyBase: string): React.ReactNode[] {
+  return text.split(SIGNED_SPLIT).map((p, i) => {
+    if (!p) return null
+    const dir = signDirection(p)
+    if (dir === 'up') return <span key={`${keyBase}-${i}`} className="text-red-500 font-semibold">{p}</span>
+    if (dir === 'down') return <span key={`${keyBase}-${i}`} className="text-blue-500 font-semibold">{p}</span>
+    return <span key={`${keyBase}-${i}`}>{p}</span>
+  })
+}
+
+// 에이전트 발화용 경량 마크다운 — **볼드**, 불릿(-/•), 번호목록, 줄바꿈 + 방향성 수치 색칠
+function renderInline(text: string, keyBase = 'i'): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).flatMap((p, i) => {
     const m = /^\*\*([^*]+)\*\*$/.exec(p)
-    return m ? <strong key={i} className="font-bold">{m[1]}</strong> : <span key={i}>{p}</span>
+    if (m) return [<strong key={`${keyBase}-b-${i}`} className="font-bold">{colorizeSigned(m[1], `${keyBase}-b-${i}`)}</strong>]
+    return colorizeSigned(p, `${keyBase}-t-${i}`)
   })
 }
 
@@ -73,7 +86,7 @@ function MessageText({ content }: { content: string }) {
           return (
             <div key={i} className="flex gap-1.5">
               <span className="shrink-0">•</span>
-              <span>{renderInline(bullet[1])}</span>
+              <span>{renderInline(bullet[1], `l${i}`)}</span>
             </div>
           )
         const num = /^\s*(\d+)\.\s+(.*)$/.exec(line)
@@ -81,10 +94,10 @@ function MessageText({ content }: { content: string }) {
           return (
             <div key={i} className="flex gap-1.5">
               <span className="shrink-0">{num[1]}.</span>
-              <span>{renderInline(num[2])}</span>
+              <span>{renderInline(num[2], `l${i}`)}</span>
             </div>
           )
-        return line.trim() ? <div key={i}>{renderInline(line)}</div> : <div key={i} className="h-2" />
+        return line.trim() ? <div key={i}>{renderInline(line, `l${i}`)}</div> : <div key={i} className="h-2" />
       })}
     </>
   )
