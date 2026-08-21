@@ -83,7 +83,7 @@ export function DecisionPage({ code, frame }: { code: string; frame: Frame }) {
         <button
           disabled={saved}
           onClick={() => {
-            addRecord({ code, okCount: data.summary.ok, violateCount: data.summary.violate, naCount: data.summary.na, note })
+            addRecord({ code, okCount: data.summary.ok, violateCount: data.summary.violate, naCount: data.summary.na, priceAtDecision: Number(data.quote?.price) || undefined, note })
             setSaved(true)
           }}
           className={`mt-1 px-3 py-1.5 rounded text-xs transition-colors ${
