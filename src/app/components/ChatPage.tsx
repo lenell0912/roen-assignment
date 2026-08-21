@@ -322,9 +322,9 @@ export function ChatPage({
       const j = await res.json()
       const tools: UsedTool[] = j.usedTools ?? []
       handleSideEffects(tools)
-      setMsgs([...next, { role: 'assistant', content: j.reply ?? j.error ?? '오류가 났어.', tools }])
+      setMsgs([...next, { role: 'assistant', content: j.reply ?? j.error ?? '오류가 났어요.', tools }])
     } catch {
-      setMsgs([...next, { role: 'assistant', content: '네트워크 오류가 났어. 다시 시도해줘.' }])
+      setMsgs([...next, { role: 'assistant', content: '네트워크 오류가 났어요. 다시 시도해 주세요.' }])
     }
     setLoading(false)
   }

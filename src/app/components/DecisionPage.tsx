@@ -77,7 +77,7 @@ export function DecisionPage({ code, frame }: { code: string; frame: Frame }) {
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="왜 이렇게 판단했는지 한 줄로 남겨두면, 나중에 회고할 때 운/실력을 가릴 수 있어."
+          placeholder="왜 이렇게 판단했는지 한 줄로 남겨두면, 나중에 회고할 때 운/실력을 가릴 수 있어요."
           className="w-full border rounded-lg p-2 text-sm h-16"
         />
         <button

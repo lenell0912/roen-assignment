@@ -101,7 +101,7 @@ export function RetroPage({ code, frame, setFrame }: { code?: string; frame: Fra
       )}
 
       <div className="mt-4 p-3 bg-amber-50 rounded-lg text-amber-800 text-xs">
-        ⚠️ 이건 <b>정답이 아니라 "네 매매를 과거에 비춘 참고"</b>야. 표본이 적고 특정 구간에 치우칠 수 있으니, 규칙 변경은 신중히.
+        ⚠️ 이건 <b>정답이 아니라 "내 매매를 과거에 비춘 참고"</b>예요. 표본이 적고 특정 구간에 치우칠 수 있으니, 규칙 변경은 신중히 해주세요.
       </div>
     </div>
   )
