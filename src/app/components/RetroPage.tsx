@@ -2,30 +2,40 @@
 import { useEffect, useState } from 'react'
 import { Frame } from '@/lib/frame'
 import { saveFrame } from '@/lib/frameStore'
+import { loadRecords } from '@/lib/records'
+import type { TradeReview, ReviewItem, ScenarioCard } from '@/lib/review'
 
-interface Candle { date: string; close: number }
-
-export function RetroPage({ code, frame, setFrame }: { code: string; frame: Frame; setFrame: (f: Frame) => void }) {
-  const [candles, setCandles] = useState<Candle[]>([])
-  const [bt, setBt] = useState<any>(null)
+export function RetroPage({ code, frame, setFrame }: { code?: string; frame: Frame; setFrame: (f: Frame) => void }) {
+  const [review, setReview] = useState<TradeReview | null>(null)
   const [evo, setEvo] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
   const [applied, setApplied] = useState(false)
 
   useEffect(() => {
+    let alive = true
     setLoading(true)
+    setFailed(false)
     setApplied(false)
-    Promise.all([
-      fetch(`/api/history?code=${code}&days=200`).then((r) => r.json()),
-      fetch('/api/backtest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, frame }) }).then((r) => r.json()),
-      fetch('/api/evolve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code, frame }) }).then((r) => r.json()),
-    ])
-      .then(([h, b, e]) => {
-        setCandles(h.candles ?? [])
-        setBt(b)
-        setEvo(e)
+    setEvo(null)
+    const records = loadRecords().map((r) => ({
+      code: r.code, at: r.at, okCount: r.okCount, violateCount: r.violateCount, naCount: r.naCount,
+      priceAtDecision: r.priceAtDecision, note: r.note,
+    }))
+    fetch('/api/review', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frame, code, records }) })
+      .then((r) => r.json())
+      .then((rv: TradeReview & { error?: string }) => {
+        if (!alive) return
+        if (rv.error) { setFailed(true); return }
+        setReview(rv)
+        return fetch('/api/evolve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frame, review: rv }) })
+          .then((r) => r.json())
+          .then((e) => { if (alive) setEvo(e) })
+          .catch(() => {})
       })
-      .finally(() => setLoading(false))
+      .catch(() => { if (alive) setFailed(true) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
   }, [code, frame])
 
   function applyProposal(p: any) {
@@ -34,56 +44,36 @@ export function RetroPage({ code, frame, setFrame }: { code: string; frame: Fram
       if (p.action === 'drop') return []
       return [{ ...r, text: p.newText ?? r.text, check: r.check && p.paramPatch ? ({ ...r.check, ...p.paramPatch } as any) : r.check }]
     })
-    saveFrame({ rules, updatedAt: new Date().toISOString() })
-    setFrame({ rules, updatedAt: new Date().toISOString() })
+    const next = { rules, updatedAt: new Date().toISOString() }
+    saveFrame(next)
+    setFrame(next)
     setApplied(true)
   }
 
-  if (loading) return <div className="p-6 text-gray-400 text-sm">과거 데이터에 프레임을 대입하고, 규칙별로 채점 중…</div>
-
-  const events: { date: string; type: string; price: number }[] = bt?.result?.events ?? []
-  const scorable = (evo?.edges ?? []).filter((e: any) => e.scorable)
+  if (loading) return <div className="p-6 text-gray-400 text-sm">내 매매를 프레임으로 돌아보는 중…</div>
+  if (failed || !review) return <div className="p-6 text-red-500 text-sm">회고를 불러오지 못했어요 — 잠시 후 다시 시도해 주세요.</div>
 
   return (
     <div className="p-5 overflow-y-auto h-full text-sm">
-      <div className="font-bold">🔁 회고 — 내 프레임을 과거에 대입 &amp; 데이터로 채점</div>
+      <div className="font-bold">🔁 회고 — 내 매매를 내 프레임으로 돌아보기</div>
 
-      {bt?.supported === false ? (
-        <div className="mt-2 text-gray-600">{bt.note}</div>
-      ) : (
-        <>
-          <div className="text-xs text-gray-500 mt-0.5">
-            규칙: {bt?.params?.fast}/{bt?.params?.slow} 이동평균 교차 · 최근 {candles.length}거래일
-          </div>
-          <Chart candles={candles} events={events} />
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <Stat label="규칙대로 매매" value={fmt(bt?.result?.strategyReturnPct)} />
-            <Stat label="그냥 보유" value={fmt(bt?.result?.buyHoldReturnPct)} />
-            <Stat label="매매 횟수" value={`${bt?.result?.trades ?? 0}회`} />
-          </div>
-        </>
-      )}
+      {/* 운/실력 요약 */}
+      <div className="mt-2 p-3 rounded-lg bg-slate-50 border text-slate-800">
+        <div className="text-[11px] font-semibold text-slate-500">운 vs 실력</div>
+        <div className="mt-0.5 leading-relaxed">{review.summary.verdict}</div>
+      </div>
 
-      {/* 규칙별 기여도 — novelty */}
-      <div className="mt-5">
-        <div className="font-semibold">📊 규칙별 기여도 (내 데이터로 채점)</div>
-        <div className="text-[11px] text-gray-500 mb-1">각 규칙을 지킨 날 vs 어긴 날의 이후 20일 수익률 차이(엣지).</div>
-        {scorable.length === 0 ? (
-          <div className="text-xs text-gray-400">채점 가능한 규칙(이동평균/추격) 이 없어. 서술형·쏠림 규칙은 자동 채점 대상이 아니야.</div>
+      {/* 매매별 카드 */}
+      <div className="mt-4 space-y-2">
+        {review.items.length === 0 ? (
+          <div className="text-xs text-gray-400">아직 돌아볼 매매가 없어요. 종목을 원칙에 대조해 기록을 쌓아보세요.</div>
         ) : (
-          <div className="space-y-1">
-            {scorable.map((e: any) => (
-              <div key={e.ruleId} className="flex items-center gap-2 border rounded-lg px-2 py-1.5">
-                <span className="flex-1 truncate">{e.text}</span>
-                <span className="text-[11px] text-gray-400">지킨 {e.satisfiedAvg?.toFixed(1)}% / 어긴 {e.violatedAvg?.toFixed(1)}%</span>
-                <span className={`font-bold ${e.edge >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                  엣지 {e.edge >= 0 ? '+' : ''}{e.edge?.toFixed(1)}%p
-                </span>
-              </div>
-            ))}
-          </div>
+          review.items.map((it, i) => <TradeRow key={`${it.source}-${it.code}-${i}`} it={it} />)
         )}
       </div>
+
+      {/* 가상 시나리오 */}
+      {review.scenario && <ScenarioRow sc={review.scenario} />}
 
       {/* 진화 제안 */}
       {evo?.suggestion && (
@@ -92,20 +82,28 @@ export function RetroPage({ code, frame, setFrame }: { code: string; frame: Fram
           <div className="mt-1 text-sm">{evo.suggestion}</div>
           {evo.proposal && !applied && (
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-[11px] px-1.5 py-0.5 rounded bg-white border">
-                {evo.proposal.action} · {evo.proposal.ruleId}
-              </span>
-              <button onClick={() => applyProposal(evo.proposal)} className="px-3 py-1 rounded bg-indigo-600 text-white text-xs">
-                ✅ 이 개정 반영
-              </button>
+              <span className="text-[11px] px-1.5 py-0.5 rounded bg-white border">{evo.proposal.action} · {evo.proposal.ruleId}</span>
+              <button onClick={() => applyProposal(evo.proposal)} className="px-3 py-1 rounded bg-indigo-600 text-white text-xs">✅ 이 개정 반영</button>
             </div>
           )}
-          {applied && <div className="mt-2 text-xs text-emerald-700">반영됨 — 프레임이 업데이트되고 회고가 다시 계산됐어.</div>}
+          {applied && <div className="mt-2 text-xs text-emerald-700">반영됨 — 프레임이 업데이트되고 회고가 다시 계산됐어요.</div>}
         </div>
       )}
 
-      <div className="mt-3 p-3 bg-amber-50 rounded-lg text-amber-800 text-xs">
-        ⚠️ 이건 <b>정답이 아니라 "네 규칙을 과거에 비춘 참고"</b>야. 특정 구간에 과최적화될 수 있으니, 규칙 변경은 신중히.
+      {/* 보너스: 이동평균 전체기간 시뮬 */}
+      {review.smaBonus && (
+        <div className="mt-4">
+          <div className="font-semibold text-xs text-gray-600">➕ 보너스: 이동평균 규칙 전체기간 시뮬 ({review.smaBonus.params.fast}/{review.smaBonus.params.slow})</div>
+          <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+            <Stat label="규칙대로" value={fmt(review.smaBonus.result.strategyReturnPct)} />
+            <Stat label="그냥 보유" value={fmt(review.smaBonus.result.buyHoldReturnPct)} />
+            <Stat label="매매" value={`${review.smaBonus.result.trades}회`} />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 p-3 bg-amber-50 rounded-lg text-amber-800 text-xs">
+        ⚠️ 이건 <b>정답이 아니라 "네 매매를 과거에 비춘 참고"</b>야. 표본이 적고 특정 구간에 치우칠 수 있으니, 규칙 변경은 신중히.
       </div>
     </div>
   )
@@ -116,43 +114,62 @@ function fmt(v: number | null | undefined) {
   return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
 }
 
+function FitPills({ fit }: { fit: { ok: number; violate: number; na: number } }) {
+  return (
+    <div className="flex gap-1 text-[10px] font-bold">
+      <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">부합 {fit.ok}</span>
+      <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-600">위반 {fit.violate}</span>
+      <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">미지원 {fit.na}</span>
+    </div>
+  )
+}
+
+function TradeRow({ it }: { it: ReviewItem }) {
+  const up = (it.returnPct ?? 0) >= 0
+  const when = it.source === 'holding'
+    ? `매입가 ${it.entryPrice?.toLocaleString()}원`
+    : `대조 결정${it.at ? ` · ${it.at.slice(0, 10)}` : ''}`
+  return (
+    <div className="border rounded-lg p-3 flex items-start gap-2.5">
+      <span className={`shrink-0 whitespace-nowrap text-[11px] px-1.5 py-0.5 rounded border ${it.source === 'holding' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-600'}`}>
+        {it.source === 'holding' ? '보유' : '기록'}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{it.name}</span>
+          <span className="ml-auto text-right whitespace-nowrap">
+            {it.returnPct == null
+              ? <span className="text-[11px] text-gray-400">관찰 중(경과 짧음)</span>
+              : <span className={`font-bold ${up ? 'text-red-500' : 'text-blue-500'}`}>{fmt(it.returnPct)}</span>}
+          </span>
+        </div>
+        <div className="mt-1 text-[11px] text-gray-500">{when}</div>
+        <div className="mt-1"><FitPills fit={it.fit} /></div>
+      </div>
+    </div>
+  )
+}
+
+function ScenarioRow({ sc }: { sc: ScenarioCard }) {
+  const up = sc.returnPct >= 0
+  return (
+    <div className="mt-4 p-3 rounded-lg bg-violet-50 text-violet-900">
+      <div className="font-semibold text-xs">🔮 가상 시나리오 — {sc.name}</div>
+      <div className="mt-1 text-sm leading-relaxed">
+        {sc.lookbackDays}거래일 전({sc.entryDate}) <b>{sc.entryPrice.toLocaleString()}원</b>에서 봤다면 지금까지{' '}
+        <b className={up ? 'text-red-600' : 'text-blue-600'}>{fmt(sc.returnPct)}</b>.
+      </div>
+      <div className="mt-1"><FitPills fit={sc.fit} /></div>
+      <div className="mt-1 text-[10px] text-violet-500">실제 매매가 아니라 참고용 가상 시나리오예요.</div>
+    </div>
+  )
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="border rounded-lg p-2">
       <div className="text-[11px] text-gray-500">{label}</div>
       <div className="font-bold">{value}</div>
     </div>
-  )
-}
-
-function Chart({ candles, events }: { candles: Candle[]; events: { date: string; type: string; price: number }[] }) {
-  if (candles.length < 2) return <div className="text-xs text-gray-400 mt-2">차트 데이터 부족</div>
-  const W = 520
-  const H = 170
-  const pad = 10
-  const closes = candles.map((c) => c.close)
-  const min = Math.min(...closes)
-  const max = Math.max(...closes)
-  const x = (i: number) => pad + (i / (candles.length - 1)) * (W - 2 * pad)
-  const y = (v: number) => pad + (1 - (v - min) / (max - min || 1)) * (H - 2 * pad)
-  const line = candles.map((c, i) => `${x(i).toFixed(1)},${y(c.close).toFixed(1)}`).join(' ')
-  const idxByDate = new Map(candles.map((c, i) => [c.date, i]))
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3 border rounded-lg bg-white">
-      <polyline points={line} fill="none" stroke="#94a3b8" strokeWidth="1.5" />
-      {events.map((e, k) => {
-        const i = idxByDate.get(e.date)
-        if (i == null) return null
-        const buy = e.type === 'BUY'
-        return (
-          <g key={k}>
-            <circle cx={x(i)} cy={y(e.price)} r="4" fill={buy ? '#ef4444' : '#3b82f6'} />
-            <text x={x(i)} y={y(e.price) - 7} fontSize="9" textAnchor="middle" fill={buy ? '#ef4444' : '#3b82f6'}>
-              {buy ? '매수' : '매도'}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
   )
 }

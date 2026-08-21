@@ -9,7 +9,7 @@ import { DecisionPage } from './DecisionPage'
 import { RetroPage } from './RetroPage'
 import { FramePage } from './FramePage'
 
-type Detail = { kind: 'decision' | 'retro'; code: string } | { kind: 'frame' } | { kind: 'wiki' } | null
+type Detail = { kind: 'decision' | 'retro'; code?: string } | { kind: 'frame' } | { kind: 'wiki' } | null
 
 export function MiniApp({
   context,
@@ -92,7 +92,7 @@ export function MiniApp({
           {/* 상세 뷰 오버레이 — 위키·대조·회고·원칙 편집 (헤더 뒤로가기로 대화 복귀) */}
           {detail && (
             <div className="absolute inset-0 bg-white overflow-y-auto ios-scroll">
-              {detail.kind === 'decision' && <DecisionPage code={detail.code} frame={frame ?? EXAMPLE_FRAME} />}
+              {detail.kind === 'decision' && <DecisionPage code={detail.code!} frame={frame ?? EXAMPLE_FRAME} />}
               {detail.kind === 'retro' && <RetroPage code={detail.code} frame={frame ?? EXAMPLE_FRAME} setFrame={onFrameChange} />}
               {detail.kind === 'frame' && <FramePage frame={frame ?? EXAMPLE_FRAME} setFrame={(f) => { onFrameChange(f); markStep('frame') }} />}
               {detail.kind === 'wiki' && <WikiPage frame={frame} onEditFrame={() => setDetail({ kind: 'frame' })} />}
