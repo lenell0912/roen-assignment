@@ -2,6 +2,7 @@ import { getQuote } from './market'
 import { getPortfolio, compareToFrame, reviewTrades } from './capabilities'
 import { Frame, rulesFromToolInput } from './frame'
 import { searchStocks } from './stocks'
+import { suggestRules, Focus } from './ruleLibrary'
 
 const hasFrame = (f?: Frame) => !!f && f.rules.length > 0
 
@@ -36,6 +37,15 @@ export const TOOLS = [
     description:
       '사용자의 실제 매매(보유내역·판단기록)를 그의 프레임으로 회고한다. 운/실력 분리 관점의 참고 요약. code를 주면 그 종목의 가상 시나리오도 만든다.',
     input_schema: { type: 'object', properties: { code: { type: 'string' } } },
+  },
+  {
+    name: 'suggest_rules',
+    description:
+      '사용자가 매매 원칙 만들기를 막막해하거나 도움을 요청하면(예: "모르겠어", "같이 골라줘"), 참고용 규칙 후보를 제시한다. 화면에 탭해서 담는 칩으로 뜨니 텍스트로 규칙을 길게 나열하지 말고 짧게 안내만 해라. focus로 성향을 반영할 수 있다.',
+    input_schema: {
+      type: 'object',
+      properties: { focus: { type: 'string', enum: ['trend', 'value', 'news'], description: '추세/가치/뉴스·테마 성향(선택)' } },
+    },
   },
   {
     name: 'update_frame',
@@ -88,6 +98,9 @@ export async function runTool(
       // 서버엔 판단기록(records, 클라 localStorage)이 없으므로 여기 요약은 '보유내역 기반 미리보기'다.
       // 기록까지 포함한 전체 회고는 RetroPage가 /api/review로 records를 실어 다시 계산한다.
       return await reviewTrades(ctx.frame, { code: input?.code })
+    case 'suggest_rules':
+      // 참고용 규칙 후보(결정적). 클라가 탭 칩으로 렌더 → 사용자가 담으면 프레임에 반영.
+      return { rules: suggestRules(input?.focus as Focus | undefined) }
     case 'update_frame': {
       // 저장 자체는 클라이언트가 한다(localStorage). 서버는 실제로 반영될 정제본 기준으로 정직하게 보고한다.
       const rules = rulesFromToolInput(input)

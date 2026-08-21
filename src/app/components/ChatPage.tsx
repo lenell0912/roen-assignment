@@ -23,18 +23,21 @@ function openingText(hasFrame: boolean, ctx: ChatCtx): string {
   }
   if (!hasFrame)
     return (
-      `안녕하세요, 곁에서 함께 판단을 다듬는 투자 동반자 Frame이에요. ` +
-      `아직 매매 원칙이 없으시네요 — 5분이면 같이 만들 수 있어요. 평소 뭘 보고 사고파는지 편하게 말해주셔도 좋아요!`
+      `안녕하세요, 곁에서 판단을 다듬는 투자 동반자 Frame이에요. ` +
+      `평소 어떻게 사고파세요? 종목 고르는 기준이든 파는 타이밍이든 편하게 한두 줄로요 — 딱 안 떠오르면 제가 같이 골라드릴게요.`
     )
   return `안녕하세요, 투자 동반자 Frame이에요. 세워둔 원칙 기준으로 도와드릴게요 — 종목을 말씀하시면 실데이터로 원칙에 대조하고 반대 근거까지 짚어드려요.`
 }
 
 interface Chip { label: string; text?: string; action?: 'wiki' | 'pickStock'; emphasis?: boolean }
 
+const KIND_BADGE: Record<string, string> = { buy: 'bg-red-50 text-red-600', sell: 'bg-blue-50 text-blue-600', risk: 'bg-amber-50 text-amber-700' }
+const KIND_LABEL: Record<string, string> = { buy: '매수', sell: '매도', risk: '리스크' }
+
 function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
   if (!hasFrame)
     return [
-      { label: '내 매매 원칙 만들기', text: '내 매매 원칙을 만들고 싶어. 뭐부터 정하면 좋아?' },
+      { label: '막막해요 · 같이 골라줘', text: '원칙 만들기가 막막해요 — 같이 골라주세요.', emphasis: true },
       ctx.name
         ? { label: '종목 대조해보기', text: `${ctx.name} 지금 사도 될까?` }
         : { label: '종목 대조해보기', action: 'pickStock' },
@@ -216,6 +219,19 @@ export function ChatPage({
     setMsgs((m) => [...m, { role: 'assistant', content, picks }])
   }
 
+  // 'suggest_rules' 제안 칩 탭 — 그 규칙을 현재 프레임에 담거나(토글) 뺀다. 즉시 저장·반영.
+  function toggleLibRule(r: { key: string; kind: 'buy' | 'sell' | 'risk'; text: string; check?: any }) {
+    const id = 'lib:' + r.key
+    const cur = frame?.rules ?? []
+    const exists = cur.some((x) => x.id === id)
+    const rules = exists ? cur.filter((x) => x.id !== id) : [...cur, { id, kind: r.kind, text: r.text, check: r.check }]
+    const f: Frame = { rules, updatedAt: new Date().toISOString() }
+    saveFrame(f)
+    onFrameSaved(f)
+    if (!exists && rules.length) markStep('frame')
+    onActivity()
+  }
+
   // 도구 사용의 클라이언트 부수효과: 프레임 저장 · 자동 기록 · 데모 스텝 체크
   function handleSideEffects(tools: UsedTool[]) {
     for (const t of tools) {
@@ -280,6 +296,28 @@ export function ChatPage({
                 return <ReviewCard key={k} result={t.output} onExpand={() => onOpenDetail({ kind: 'retro', code: t.input?.code })} />
               if (t.name === 'update_frame')
                 return <FrameSavedCard key={k} rules={rulesFromToolInput(t.input)} onExpand={onOpenWiki} onEdit={onEditFrame} />
+              if (t.name === 'suggest_rules' && t.output?.rules?.length)
+                return (
+                  <div key={k} className="mt-1.5 flex flex-col gap-1.5 max-w-[92%]">
+                    {t.output.rules.map((r: any) => {
+                      const added = !!frame?.rules.some((x) => x.id === 'lib:' + r.key)
+                      return (
+                        <button
+                          key={r.key}
+                          onClick={() => toggleLibRule(r)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-colors ${
+                            added ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-black/10 hover:border-black/25'
+                          }`}
+                        >
+                          <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded font-semibold ${KIND_BADGE[r.kind]}`}>{KIND_LABEL[r.kind]}</span>
+                          <span className="flex-1 text-xs leading-snug">{r.text}</span>
+                          <span className={`shrink-0 text-sm font-bold ${added ? 'text-emerald-600' : 'text-gray-300'}`}>{added ? '✓' : '+'}</span>
+                        </button>
+                      )
+                    })}
+                    <span className="px-1 text-[10px] text-gray-400">눌러서 담기 · 참고용 예시예요(투자자문 아님)</span>
+                  </div>
+                )
               return null
             })}
             {m.picks?.length ? (
