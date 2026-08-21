@@ -1,5 +1,5 @@
 import { getQuote } from './market'
-import { getPortfolio, compareToFrame, runBacktest } from './capabilities'
+import { getPortfolio, compareToFrame, reviewTrades } from './capabilities'
 import { Frame, rulesFromToolInput } from './frame'
 import { searchStocks } from './stocks'
 
@@ -32,9 +32,10 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] },
   },
   {
-    name: 'run_backtest',
-    description: '사용자 프레임의 이동평균 규칙을 종목 과거 데이터에 대입(회고). 규칙대로 매매 시 성과 vs 바이앤홀드.',
-    input_schema: { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] },
+    name: 'review_trades',
+    description:
+      '사용자의 실제 매매(보유내역·판단기록)를 그의 프레임으로 회고한다. 운/실력 분리 관점의 참고 요약. code를 주면 그 종목의 가상 시나리오도 만든다.',
+    input_schema: { type: 'object', properties: { code: { type: 'string' } } },
   },
   {
     name: 'update_frame',
@@ -81,10 +82,10 @@ export async function runTool(
       if (!hasFrame(ctx.frame))
         return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 대조 대신 팩트 브리핑(get_quote)을 하고, 원칙부터 만들자고 제안해라.' }
       return await compareToFrame(String(input?.code ?? ''), ctx.frame)
-    case 'run_backtest':
+    case 'review_trades':
       if (!hasFrame(ctx.frame))
         return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 원칙부터 만들자고 제안해라.' }
-      return await runBacktest(String(input?.code ?? ''), ctx.frame)
+      return await reviewTrades(ctx.frame, { code: input?.code })
     case 'update_frame': {
       // 저장 자체는 클라이언트가 한다(localStorage). 서버는 실제로 반영될 정제본 기준으로 정직하게 보고한다.
       const rules = rulesFromToolInput(input)

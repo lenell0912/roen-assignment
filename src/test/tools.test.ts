@@ -7,8 +7,8 @@ describe('runTool · 무프레임 가드', () => {
     const out = await runTool('compare_to_frame', { code: '005930' }, {})
     expect(out).toMatchObject({ noFrame: true })
   })
-  it('run_backtest: 프레임이 없으면 noFrame', async () => {
-    const out = await runTool('run_backtest', { code: '005930' }, {})
+  it('review_trades: 프레임이 없으면 noFrame', async () => {
+    const out = await runTool('review_trades', { code: '005930' }, {})
     expect(out).toMatchObject({ noFrame: true })
   })
   it('프레임이 있어도 rules가 비어있으면 noFrame', async () => {
