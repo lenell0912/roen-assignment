@@ -334,11 +334,11 @@ export function ChatPage({
   async function speak(seq: Msg[]) {
     for (let i = 0; i < seq.length; i++) {
       setTyping(true)
-      await sleep(650)
+      await sleep(400)
       if (!aliveRef.current) return
       setTyping(false)
       setMsgs((m) => [...m, seq[i]])
-      if (i < seq.length - 1) await sleep(320)
+      if (i < seq.length - 1) await sleep(180)
     }
   }
 
