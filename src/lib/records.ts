@@ -7,6 +7,7 @@ export interface DecisionRecord {
   okCount: number
   violateCount: number
   naCount: number
+  priceAtDecision?: number // 대조 시점 시세(회고 성과 계산용). 옛 기록엔 없을 수 있음
   note: string
 }
 
