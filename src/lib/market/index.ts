@@ -25,4 +25,31 @@ export const getDailyCandles = (code: string, days?: number, provider?: string) 
 export const getDailyCloses = async (code: string, days?: number, provider?: string) =>
   (await getDailyCandles(code, days, provider)).map((c) => c.close)
 
+export interface RankedStock {
+  code: string
+  price: number // 최근 종가
+  changeRate: number // 전일 대비 %
+  volume: number // 최근 거래일 거래량(주)
+  value: number // 최근 거래일 거래대금(원) = 종가 × 거래량
+}
+
+/** 후보 종목들을 최근 거래일 거래대금(가격×거래량) 기준 내림차순으로 랭킹. 실패한 종목은 조용히 제외. */
+export async function getTradingValueRanking(codes: string[], topN = 5, provider?: string): Promise<RankedStock[]> {
+  const settled = await Promise.allSettled(
+    codes.map(async (code): Promise<RankedStock> => {
+      const candles = await getDailyCandles(code, 8, provider)
+      const last = candles[candles.length - 1]
+      const prev = candles[candles.length - 2]
+      if (!last || last.volume == null) throw new Error(`no volume for ${code}`)
+      const changeRate = prev && prev.close ? ((last.close - prev.close) / prev.close) * 100 : 0
+      return { code, price: last.close, changeRate, volume: last.volume, value: last.close * last.volume }
+    }),
+  )
+  return settled
+    .filter((r): r is PromiseFulfilledResult<RankedStock> => r.status === 'fulfilled')
+    .map((r) => r.value)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, topN)
+}
+
 export type { Quote, Candle, MarketData } from './types'

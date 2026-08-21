@@ -31,6 +31,7 @@ export interface EvalContext {
   quote?: Quote
   sector?: string
   sectorWeights?: Record<string, number>
+  entryPrice?: number // 보유 종목의 평균 매입가(있으면 익절·손절 규칙을 실계산)
 }
 
 export function evaluateCheck(check: MachineCheck, ctx: EvalContext): CheckVerdict {
@@ -69,13 +70,53 @@ export function evaluateCheck(check: MachineCheck, ctx: EvalContext): CheckVerdi
   }
 }
 
+// ── 머신 체크가 없는 규칙의 '소프트' 평가 ──────────────
+// 텍스트만 있는 규칙도 성격을 나눠 정직하게 라벨링한다:
+//  · 익절/손절처럼 계산 기반 규칙 → 보유 종목(매입가 있음)이면 실계산해 부합/위반,
+//    미보유면 '매입가 필요'로 아직 자동판정 불가(na).
+//  · 뉴스/여론 같은 정성 규칙, 그 외 → 아직 지원 안 하는 규칙(na).
+const PROFIT_RE = /익절|이익\s*실현|목표\s*수익|수익\s*실현/
+const STOP_RE = /손절|스탑|스톱|손실\s*(제한|한도|률|폭)/
+const NEWS_RE = /뉴스|기사|이슈|호재|악재|공시|루머|커뮤니티|여론|반응|테마|재료|심리|분위기/
+
+function pickPct(text: string): number | undefined {
+  const m = text.match(/([-+]?\d+(?:\.\d+)?)\s*%/)
+  return m ? Math.abs(Number(m[1])) : undefined
+}
+
+export function evaluateSoftRule(rule: Rule, ctx: EvalContext): CheckVerdict {
+  const text = rule.text
+  const isProfit = PROFIT_RE.test(text)
+  const isStop = STOP_RE.test(text)
+
+  if (isProfit || isStop) {
+    const pct = pickPct(text)
+    const price = ctx.quote?.price ?? ctx.candles[ctx.candles.length - 1]?.close
+    if (ctx.entryPrice && price && pct != null) {
+      const ret = ((price - ctx.entryPrice) / ctx.entryPrice) * 100
+      const sign = ret >= 0 ? '+' : ''
+      const base = `매입가 ${ctx.entryPrice.toLocaleString()}원 대비 현재 ${sign}${ret.toFixed(1)}%`
+      if (isProfit) {
+        const hit = ret >= pct
+        return { status: hit ? 'violate' : 'ok', detail: `${base} — 익절 목표 +${pct}% ${hit ? '도달(익절 검토 구간)' : '미도달'}` }
+      }
+      const hit = ret <= -pct
+      return { status: hit ? 'violate' : 'ok', detail: `${base} — 손절선 -${pct}% ${hit ? '이탈(손절 검토 구간)' : '이내'}` }
+    }
+    return { status: 'na', detail: '계산 기반 규칙 — 매입가가 없어 아직 자동 판정 못 해요 (보유 종목은 자동 계산)' }
+  }
+
+  if (NEWS_RE.test(text)) return { status: 'na', detail: '뉴스·여론 자동 분석은 아직 지원하지 않아요 — 직접 확인' }
+  return { status: 'na', detail: '아직 자동 판정을 지원하지 않는 규칙 — 직접 확인' }
+}
+
 export interface RuleVerdict { rule: Rule; verdict: CheckVerdict }
 
-/** 프레임 전체를 맥락에 대조. 서술형 규칙(check 없음)은 '스스로 판단'으로 표시 */
+/** 프레임 전체를 맥락에 대조. 머신 체크가 없는 규칙은 소프트 평가(성격별 정직 라벨)로 처리 */
 export function evaluateFrame(frame: Frame, ctx: EvalContext): RuleVerdict[] {
   return frame.rules.map((rule) => ({
     rule,
-    verdict: rule.check ? evaluateCheck(rule.check, ctx) : { status: 'na', detail: '서술형 규칙 — 스스로 판단' },
+    verdict: rule.check ? evaluateCheck(rule.check, ctx) : evaluateSoftRule(rule, ctx),
   }))
 }
 

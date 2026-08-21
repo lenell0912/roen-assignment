@@ -18,7 +18,8 @@ export async function compareToFrame(code: string, frame: Frame = EXAMPLE_FRAME)
   const [quote, candles] = await Promise.all([getQuote(code), getDailyCandles(code, 120)])
   const sector = sectorOf(code)
   const sw = sectorWeights()
-  const verdicts = evaluateFrame(frame, { code, candles, quote, sector, sectorWeights: sw })
+  const entryPrice = DEMO_PORTFOLIO.find((h) => h.code === code)?.avgPrice
+  const verdicts = evaluateFrame(frame, { code, candles, quote, sector, sectorWeights: sw, entryPrice })
   const summary = { ok: 0, violate: 0, na: 0 }
   for (const v of verdicts) summary[v.verdict.status]++
   return { code, quote, sector, sectorWeights: sw, verdicts, summary }

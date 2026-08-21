@@ -38,7 +38,11 @@ export const yahooProvider: MarketData = {
         const c: any = await yahooFinance.chart(symbol, { period1, interval: '1d' })
         const out = (c.quotes ?? [])
           .filter((r: any) => r.close != null)
-          .map((r: any) => ({ date: new Date(r.date).toISOString().slice(0, 10), close: Number(r.close) }))
+          .map((r: any) => ({
+            date: new Date(r.date).toISOString().slice(0, 10),
+            close: Number(r.close),
+            volume: r.volume != null ? Number(r.volume) : undefined,
+          }))
         if (out.length === 0) throw new Error('Yahoo candles empty')
         return out.slice(-days)
       } catch (e) {

@@ -41,7 +41,7 @@ export function FramePage({ frame, setFrame }: { frame: Frame; setFrame: (f: Fra
     <div className="p-4 overflow-y-auto h-full text-sm bg-[#F1F3F5]">
       <div className="text-lg font-extrabold text-[#191919]">📋 내 거래 프레임</div>
       <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-        나만의 매매 규칙이에요. <b>자동체크</b> 규칙은 결정·회고에서 실데이터로 검증되고, 서술형은 스스로 판단합니다.
+        나만의 매매 규칙이에요. <b>자동체크</b> 규칙은 결정·회고에서 실데이터로 검증돼요. 익절·손절은 보유 종목이면 매입가로 자동 계산하고, 뉴스·여론 같은 규칙은 아직 자동 판정을 지원하지 않아 직접 확인합니다.
       </div>
 
       {/* 규칙 목록 — 각 규칙을 2줄 카드로(배지 행 + 입력 행) */}

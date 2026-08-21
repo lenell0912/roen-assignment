@@ -8,6 +8,7 @@ export interface Quote {
 export interface Candle {
   date: string // YYYY-MM-DD
   close: number
+  volume?: number // 거래량(주). 제공자에 따라 없을 수 있음
 }
 
 export interface MarketData {

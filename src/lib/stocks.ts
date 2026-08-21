@@ -54,6 +54,11 @@ export const STOCKS: StockInfo[] = [
   { code: '277810', name: '레인보우로보틱스' },
 ]
 
+/** 코드 → 사전상 한글 종목명. 없으면 fallback(제공자가 준 영문명 등) → `종목 {code}` 순. */
+export function stockName(code: string, fallback?: string): string {
+  return STOCKS.find((s) => s.code === code)?.name ?? fallback ?? `종목 ${code}`
+}
+
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
 /** 이름/별칭/코드로 종목 검색. 정확 이름 > 정확 별칭 > 이름 접두 > 이름 포함 > 별칭 포함 순으로 랭킹. */

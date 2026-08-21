@@ -54,7 +54,10 @@ export const tossProvider: MarketData = {
     const rows: any[] = j.result?.candles ?? []
     // 응답은 최신→과거 → 과거→최신으로 뒤집음
     const out = rows
-      .map((r) => ({ date: String(r.timestamp).slice(0, 10), close: Number(r.closePrice) }))
+      .map((r) => {
+        const v = Number(r.volume ?? r.tradingVolume ?? r.accumulatedTradingVolume)
+        return { date: String(r.timestamp).slice(0, 10), close: Number(r.closePrice), volume: Number.isFinite(v) ? v : undefined }
+      })
       .filter((c) => !isNaN(c.close))
       .reverse()
     if (out.length === 0) throw new Error('Toss candles empty')

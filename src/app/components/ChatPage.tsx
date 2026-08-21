@@ -9,7 +9,8 @@ import { loadChat, saveChat } from '@/lib/chat'
 import { CompareCard, BacktestCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
-interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[] }
+export interface StockPick { code: string; name: string; price: number; changeRate: number; volume: number; value: number }
+interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[] }
 
 export interface ChatCtx { code?: string; name?: string }
 
@@ -23,20 +24,21 @@ function openingText(hasFrame: boolean, ctx: ChatCtx): string {
   return `${where}안녕하세요, 투자 동반자 Frame이에요. 세워둔 원칙 기준으로 도와드릴게요 — 종목을 말씀하시면 실데이터로 원칙에 대조하고 반대 근거까지 짚어드려요.`
 }
 
-interface Chip { label: string; text?: string; action?: 'wiki' }
+interface Chip { label: string; text?: string; action?: 'wiki' | 'pickStock' }
 
 function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
   if (!hasFrame)
     return [
       { label: '내 매매 원칙 만들기', text: '내 매매 원칙을 만들고 싶어. 뭐부터 정하면 좋아?' },
-      { label: '종목 대조해보기', text: ctx.name ? `${ctx.name} 지금 사도 될까?` : '삼성전자 지금 사도 될까?' },
+      ctx.name
+        ? { label: '종목 대조해보기', text: `${ctx.name} 지금 사도 될까?` }
+        : { label: '종목 대조해보기', action: 'pickStock' },
       { label: '위키 보기', action: 'wiki' },
     ]
   return [
-    {
-      label: ctx.name ? `${ctx.name} 내 원칙에 대조` : '종목 내 원칙에 대조',
-      text: ctx.name ? `${ctx.name} 내 원칙에 대조해줘. 지금 사도 될까?` : '삼성전자 내 원칙에 대조해줘. 지금 사도 될까?',
-    },
+    ctx.name
+      ? { label: `${ctx.name}에 내 원칙을 대조`, text: `${ctx.name} 내 원칙에 대조해줘. 지금 사도 될까?` }
+      : { label: '종목에 내 원칙을 대조', action: 'pickStock' },
     { label: '과거 검증(회고)', text: ctx.name ? `내 원칙을 ${ctx.name} 과거 데이터로 검증해줘` : '내 원칙을 삼성전자 과거 데이터로 검증해줘' },
     { label: '원칙 다듬기', text: '내 원칙 중에 다듬거나 추가할 게 있는지 같이 봐줘' },
     { label: '위키', action: 'wiki' },
@@ -183,6 +185,24 @@ export function ChatPage({
     setLoading(false)
   }
 
+  // '종목에 내 원칙을 대조' 칩 — 바로 특정 종목으로 가지 않고 "어떤 종목?"을 되물으며
+  // 지금 거래량 많은 종목 top5(실데이터)를 대화 안에서 선택지로 제시한다.
+  async function askWhichStock() {
+    if (loading) return
+    onActivity()
+    setLoading(true)
+    let picks: StockPick[] = []
+    try {
+      const j = await (await fetch('/api/hot')).json()
+      if (Array.isArray(j.stocks)) picks = j.stocks
+    } catch {}
+    setLoading(false)
+    const content = picks.length
+      ? '어떤 종목을 대조해볼까요? 지금 거래대금이 많은 종목이에요 — 눌러서 고르거나, 다른 종목명을 입력해도 돼요.'
+      : '어떤 종목을 대조해볼까요? 종목명을 입력해 주세요. (예: 삼성전자)'
+    setMsgs((m) => [...m, { role: 'assistant', content, picks }])
+  }
+
   // 도구 사용의 클라이언트 부수효과: 프레임 저장 · 자동 기록 · 데모 스텝 체크
   function handleSideEffects(tools: UsedTool[]) {
     for (const t of tools) {
@@ -241,6 +261,30 @@ export function ChatPage({
                 return <FrameSavedCard key={k} rules={rulesFromToolInput(t.input)} onExpand={onOpenWiki} onEdit={onEditFrame} />
               return null
             })}
+            {m.picks?.length ? (
+              <div className="mt-1.5 flex flex-col gap-1.5 max-w-[88%]">
+                {m.picks.map((p, k) => {
+                  const up = p.changeRate >= 0
+                  return (
+                    <button
+                      key={p.code}
+                      onClick={() => send(hasFrame ? `${p.name} 내 원칙에 대조해줘. 지금 사도 될까?` : `${p.name} 지금 사도 될까?`)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-black/10 hover:border-black/25 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors"
+                    >
+                      <span className="w-4 shrink-0 text-[11px] font-semibold text-gray-400">{k + 1}</span>
+                      <span className="font-semibold text-sm">{p.name}</span>
+                      <span className="ml-auto text-right leading-tight">
+                        <span className="block text-sm">{p.price.toLocaleString()}원</span>
+                        <span className={`block text-[11px] ${up ? 'text-red-500' : 'text-blue-500'}`}>
+                          {up ? '▲' : '▼'} {Math.abs(p.changeRate).toFixed(2)}%
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+                <span className="px-1 text-[10px] text-gray-400">거래대금 상위 · 실데이터(전 거래일 기준)</span>
+              </div>
+            ) : null}
           </div>
         ))}
         {loading && <div className="text-xs text-gray-400">Frame이 실데이터로 확인 중…</div>}
@@ -266,7 +310,9 @@ export function ChatPage({
                 chipDrag.current.moved = false
                 return
               }
-              c.action === 'wiki' ? onOpenWiki() : send(c.text!)
+              if (c.action === 'wiki') return onOpenWiki()
+              if (c.action === 'pickStock') return askWhichStock()
+              send(c.text!)
             }}
             className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-[#FFF3BF] text-[#191919] hover:bg-[#FFEA8A] transition-colors"
           >
