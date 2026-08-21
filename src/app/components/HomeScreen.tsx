@@ -5,6 +5,7 @@ export function HomeScreen({ onSearch, pulseSearch }: { onSearch: () => void; pu
   // 폴백 홈을 기본으로 렌더하고, home.png가 실제로 로드되면 그때 덮는다.
   // 캐시된 이미지는 마운트 시점에 이미 complete라 onLoad가 안 뜰 수 있어, 마운트 시 완료 여부를 직접 확인한다.
   const [hasShot, setHasShot] = useState(false)
+  const [atTop, setAtTop] = useState(true) // 헤더(돋보기)가 보이는 최상단인지 — 스크롤 내리면 검색 핫스팟 숨김
   const imgRef = useRef<HTMLImageElement>(null)
   useEffect(() => {
     if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) setHasShot(true)
@@ -13,18 +14,23 @@ export function HomeScreen({ onSearch, pulseSearch }: { onSearch: () => void; pu
     <div className="absolute inset-0 bg-[#f7f8fa]">
       {!hasShot && <FallbackHome onSearch={onSearch} pulseSearch={pulseSearch} />}
       {/* 실제 앱 홈(긴 스크린샷) — public/home.png. 세로 스크롤, 하단 플로팅 탭바는 뒤로 흐른다 */}
-      <div className={hasShot ? 'absolute inset-0 ios-scroll bg-white' : 'hidden'}>
+      <div
+        className={hasShot ? 'absolute inset-0 ios-scroll bg-white' : 'hidden'}
+        onScroll={(e) => setAtTop(e.currentTarget.scrollTop < 40)}
+      >
         <div className="relative">
           <img ref={imgRef} src="/home.png" alt="" onLoad={() => setHasShot(true)} className="w-full block select-none" />
-          {/* 투명 검색 핫스팟: 헤더 우측 돋보기(🔍) 위 — home.png 실측 비율 기준(중심 ≈ x70.6% y2.8%) */}
-          <button
-            aria-label="종목 검색"
-            onClick={onSearch}
-            className={`absolute z-30 rounded-full ${
-              pulseSearch ? 'ring-4 ring-yellow-300 animate-pulse bg-yellow-200/40' : 'opacity-0'
-            }`}
-            style={{ top: '2.1%', left: '66.3%', width: '8.6%', height: '1.4%' }}
-          />
+          {/* 투명 검색 핫스팟: 헤더 우측 돋보기(🔍) 위 — home.png 실측 비율 기준. 최상단에서만 노출(스크롤 내리면 숨김) */}
+          {atTop && (
+            <button
+              aria-label="종목 검색"
+              onClick={onSearch}
+              className={`absolute z-30 rounded-full ${
+                pulseSearch ? 'ring-4 ring-yellow-300 animate-pulse bg-yellow-200/40' : 'opacity-0'
+              }`}
+              style={{ top: '1.75%', left: '67.6%', width: '8.6%', height: '1.4%' }}
+            />
+          )}
         </div>
       </div>
       {hasShot && <FloatingTabBar />}
