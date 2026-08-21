@@ -10,7 +10,7 @@ import { CompareCard, ReviewCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
 export interface StockPick { code: string; name: string; price: number; changeRate: number; volume: number; value: number }
-interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[]; ctxGreetCode?: string }
+interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[]; ctxGreetCode?: string; divider?: string }
 
 export interface ChatCtx { code?: string; name?: string }
 
@@ -158,6 +158,7 @@ export function ChatPage({
     if (saved.length) {
       const last = saved[saved.length - 1]
       if (context.code && last?.ctxGreetCode !== context.code) {
+        saved.push({ role: 'assistant', content: '', divider: '여기까지 읽었어요' })
         saved.push({ role: 'assistant', content: openingText(hasFrame, context), ctxGreetCode: context.code })
       }
       setMsgs(saved)
@@ -183,7 +184,7 @@ export function ChatPage({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          messages: next.filter((m, i) => !(i === 0 && m.role === 'assistant')).map((m) => ({ role: m.role, content: m.content })),
+          messages: next.filter((m, i) => !m.divider && !(i === 0 && m.role === 'assistant')).map((m) => ({ role: m.role, content: m.content })),
           context: { code: context.code, name: context.name, frame: hasFrame ? frame : undefined },
         }),
       })
@@ -251,7 +252,14 @@ export function ChatPage({
   return (
     <div className="relative h-full">
       <div ref={scrollRef} style={{ paddingBottom: barH + 8 }} className="absolute inset-0 overflow-y-auto ios-scroll px-3 pt-3 space-y-3 bg-[#F1F3F5]">
-        {msgs.map((m, i) => (
+        {msgs.map((m, i) =>
+          m.divider ? (
+            <div key={i} className="flex items-center gap-2 py-1">
+              <div className="flex-1 h-px bg-black/10" />
+              <span className="shrink-0 text-[10px] font-medium text-gray-400 whitespace-nowrap">{m.divider}</span>
+              <div className="flex-1 h-px bg-black/10" />
+            </div>
+          ) : (
           <div key={i} className={m.role === 'user' ? 'text-right' : ''}>
             <div
               className={`inline-block px-3 py-2 rounded-2xl text-sm text-left max-w-[88%] ${
@@ -299,7 +307,8 @@ export function ChatPage({
               </div>
             ) : null}
           </div>
-        ))}
+          )
+        )}
         {loading && <div className="text-xs text-gray-400">Frame이 실데이터로 확인 중…</div>}
       </div>
 
