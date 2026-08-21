@@ -10,21 +10,26 @@ import { CompareCard, ReviewCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
 export interface StockPick { code: string; name: string; price: number; changeRate: number; volume: number; value: number }
-interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[] }
+interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[]; ctxGreetCode?: string }
 
 export interface ChatCtx { code?: string; name?: string }
 
 function openingText(hasFrame: boolean, ctx: ChatCtx): string {
-  const where = ctx.name ? `지금 ${ctx.name} 보고 계셨네요! ` : ''
+  // 종목 상세에서 Frame을 부르면, 그 종목을 콕 집어 선제적으로 말을 건다(맥락 상속).
+  if (ctx.name) {
+    if (!hasFrame)
+      return `${ctx.name} 보고 계시네요! 저는 종목을 찍어드리진 않지만, 먼저 ‘내 매매 원칙’을 만들면 이 종목이 그 원칙에 맞는지 같이 볼 수 있어요. 원칙부터 만들어볼까요?`
+    return `${ctx.name} 보고 계시네요! 지금 이 종목, 세워둔 원칙에 맞는지 실데이터로 대조해볼까요? 반대 근거까지 같이 짚어드릴게요 — 아래 “${ctx.name}에 내 원칙을 대조”를 눌러도 돼요.`
+  }
   if (!hasFrame)
     return (
-      `${where}안녕하세요, 곁에서 함께 판단을 다듬는 투자 동반자 Frame이에요. ` +
+      `안녕하세요, 곁에서 함께 판단을 다듬는 투자 동반자 Frame이에요. ` +
       `아직 매매 원칙이 없으시네요 — 5분이면 같이 만들 수 있어요. 평소 뭘 보고 사고파는지 편하게 말해주셔도 좋아요!`
     )
-  return `${where}안녕하세요, 투자 동반자 Frame이에요. 세워둔 원칙 기준으로 도와드릴게요 — 종목을 말씀하시면 실데이터로 원칙에 대조하고 반대 근거까지 짚어드려요.`
+  return `안녕하세요, 투자 동반자 Frame이에요. 세워둔 원칙 기준으로 도와드릴게요 — 종목을 말씀하시면 실데이터로 원칙에 대조하고 반대 근거까지 짚어드려요.`
 }
 
-interface Chip { label: string; text?: string; action?: 'wiki' | 'pickStock' }
+interface Chip { label: string; text?: string; action?: 'wiki' | 'pickStock'; emphasis?: boolean }
 
 function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
   if (!hasFrame)
@@ -37,7 +42,7 @@ function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
     ]
   return [
     ctx.name
-      ? { label: `${ctx.name}에 내 원칙을 대조`, text: `${ctx.name} 내 원칙에 대조해줘. 지금 사도 될까?` }
+      ? { label: `${ctx.name}에 내 원칙을 대조`, text: `${ctx.name} 내 원칙에 대조해줘. 지금 사도 될까?`, emphasis: true }
       : { label: '종목에 내 원칙을 대조', action: 'pickStock' },
     { label: '과거 검증(회고)', text: ctx.name ? `내 원칙을 ${ctx.name} 과거 데이터로 검증해줘` : '내 원칙을 삼성전자 과거 데이터로 검증해줘' },
     { label: '원칙 다듬기', text: '내 원칙 중에 다듬거나 추가할 게 있는지 같이 봐줘' },
@@ -97,7 +102,7 @@ export function ChatPage({
   onActivity: () => void
 }) {
   const hasFrame = !!frame && frame.rules.length > 0
-  const [msgs, setMsgs] = useState<Msg[]>([{ role: 'assistant', content: openingText(hasFrame, context) }])
+  const [msgs, setMsgs] = useState<Msg[]>([{ role: 'assistant', content: openingText(hasFrame, context), ctxGreetCode: context.code }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [hydrated, setHydrated] = useState(false)
@@ -147,9 +152,16 @@ export function ChatPage({
   }
 
   // 저장된 대화 복원(있으면). SSR 하이드레이션 미스매치 방지 위해 마운트 후에만.
+  // 종목 상세에서 열었으면, 복원된 대화 끝에 그 종목 선제 인사를 덧붙여 '먼저 말 거는' 순간을 보장(코드 기준 중복 방지).
   useEffect(() => {
-    const saved = loadChat()
-    if (saved.length) setMsgs(saved as Msg[])
+    const saved = loadChat() as Msg[]
+    if (saved.length) {
+      const last = saved[saved.length - 1]
+      if (context.code && last?.ctxGreetCode !== context.code) {
+        saved.push({ role: 'assistant', content: openingText(hasFrame, context), ctxGreetCode: context.code })
+      }
+      setMsgs(saved)
+    }
     setHydrated(true)
   }, [])
 
@@ -315,9 +327,13 @@ export function ChatPage({
               if (c.action === 'pickStock') return askWhichStock()
               send(c.text!)
             }}
-            className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-[#FFF3BF] text-[#191919] hover:bg-[#FFEA8A] transition-colors"
+            className={
+              c.emphasis
+                ? 'shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-[#FFEC47] text-[#191919] ring-1 ring-[#191919]/15 shadow-sm hover:bg-[#FFE01A] transition-colors animate-[pulse_1.6s_ease-in-out_2]'
+                : 'shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-[#FFF3BF] text-[#191919] hover:bg-[#FFEA8A] transition-colors'
+            }
           >
-            {c.label}
+            {c.emphasis ? `✦ ${c.label}` : c.label}
           </button>
         ))}
       </div>
