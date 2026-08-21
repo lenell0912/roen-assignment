@@ -3,6 +3,11 @@ import { getQuote, getDailyCandles, Quote } from './market'
 import { Frame, EXAMPLE_FRAME, evaluateFrame, RuleVerdict } from './frame'
 import { backtestSmaCross, BtResult } from './backtest'
 import { DEMO_PORTFOLIO, sectorWeights, sectorOf } from './portfolio'
+import { stockName } from './stocks'
+import {
+  countStatuses, fitScoreOf, isAged, summarizeReview, buildScenario,
+  ReviewItem, TradeReview, DecisionRecordInput,
+} from './review'
 
 export interface CompareResult {
   code: string
@@ -42,4 +47,72 @@ export async function runBacktest(code: string, frame: Frame = EXAMPLE_FRAME): P
 
 export function getPortfolio() {
   return { holdings: DEMO_PORTFOLIO, sectorWeights: sectorWeights() }
+}
+
+/** 계정 전체 회고 — 보유내역 + 판단기록을 내 프레임으로 돌아보고 운/실력을 요약.
+ *  records는 클라(localStorage)에서 넘겨받는다. opts.code가 있으면 가상 시나리오도 만든다. */
+export async function reviewTrades(
+  frame: Frame = EXAMPLE_FRAME,
+  opts: { code?: string; records?: DecisionRecordInput[]; now?: number } = {},
+): Promise<TradeReview> {
+  const nowMs = opts.now ?? Date.now()
+  const sw = sectorWeights()
+
+  const holdingItems = (
+    await Promise.all(
+      DEMO_PORTFOLIO.map(async (h): Promise<ReviewItem | null> => {
+        try {
+          const [quote, candles] = await Promise.all([getQuote(h.code), getDailyCandles(h.code, 120)])
+          const fit = countStatuses(
+            evaluateFrame(frame, { code: h.code, candles, quote, sector: sectorOf(h.code), sectorWeights: sw, entryPrice: h.avgPrice }),
+          )
+          return {
+            source: 'holding', code: h.code, name: h.name, entryPrice: h.avgPrice, currentPrice: quote.price,
+            returnPct: ((quote.price - h.avgPrice) / h.avgPrice) * 100, fit, fitScore: fitScoreOf(fit), aged: true,
+          }
+        } catch {
+          return null
+        }
+      }),
+    )
+  ).filter((x): x is ReviewItem => x != null)
+
+  const recordItems = (
+    await Promise.all(
+      (opts.records ?? []).map(async (r): Promise<ReviewItem> => {
+        const fit = { ok: r.okCount, violate: r.violateCount, na: r.naCount }
+        let currentPrice: number | null = null
+        let returnPct: number | null = null
+        if (r.priceAtDecision) {
+          try {
+            const q = await getQuote(r.code)
+            currentPrice = q.price
+            returnPct = ((q.price - r.priceAtDecision) / r.priceAtDecision) * 100
+          } catch {}
+        }
+        return {
+          source: 'record', code: r.code, name: stockName(r.code), entryPrice: r.priceAtDecision ?? null,
+          currentPrice, returnPct, fit, fitScore: fitScoreOf(fit), aged: isAged(r.at, nowMs), at: r.at, note: r.note,
+        }
+      }),
+    )
+  )
+
+  const items = [...holdingItems, ...recordItems]
+  const summary = summarizeReview(items)
+
+  let scenario
+  if (opts.code) {
+    try {
+      scenario = buildScenario(await getDailyCandles(opts.code, 40), frame, opts.code)
+    } catch {}
+  }
+
+  let smaBonus: TradeReview['smaBonus']
+  if (opts.code && frame.rules.some((r) => r.check?.type === 'sma_cross')) {
+    const bt = await runBacktest(opts.code, frame)
+    if (bt.supported) smaBonus = { params: bt.params, result: { strategyReturnPct: bt.result.strategyReturnPct, buyHoldReturnPct: bt.result.buyHoldReturnPct, trades: bt.result.trades } }
+  }
+
+  return { items, summary, scenario, smaBonus }
 }
