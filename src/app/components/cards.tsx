@@ -47,26 +47,19 @@ export function CompareCard({ result, onExpand }: { result: any; onExpand: () =>
   )
 }
 
-export function BacktestCard({ result, onExpand }: { result: any; onExpand: () => void }) {
-  if (result?.supported === false) return null
-  const r = result?.result
-  if (!r) return null
-  const fmt = (v: number | null | undefined) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`)
-  const win = (r.strategyReturnPct ?? 0) >= (r.buyHoldReturnPct ?? 0)
+export function ReviewCard({ result, onExpand }: { result: any; onExpand: () => void }) {
+  if (!result?.summary) return null
+  const n = (result.items ?? []).length
+  const verdict: string = result.summary.verdict ?? ''
   return (
     <div className={CARD}>
       <div className="flex items-center gap-2 px-4 py-3 bg-[#3478F6] text-white">
         <span className="text-base">🔁</span>
-        <span className="font-extrabold text-sm">회고 · 내 원칙을 과거에 대입</span>
-        <span className="ml-auto text-[11px] font-semibold opacity-80">{result.params.fast}/{result.params.slow} 교차</span>
+        <span className="font-extrabold text-sm">회고 · 내 매매 {n}건 돌아보기</span>
       </div>
-      <div className="px-4 py-3 grid grid-cols-3 gap-2 text-center">
-        <Stat label="규칙대로" value={fmt(r.strategyReturnPct)} highlight={win} />
-        <Stat label="그냥 보유" value={fmt(r.buyHoldReturnPct)} />
-        <Stat label="매매" value={`${r.trades}회`} />
-      </div>
+      <div className="px-4 py-3 text-xs text-gray-700 leading-relaxed">{verdict}</div>
       <button onClick={onExpand} className={`${FOOT} text-[#3478F6]`}>
-        차트·규칙별 채점 보기 <span className="ml-auto">→</span>
+        전체 회고 결과 보기 <span className="ml-auto">→</span>
       </button>
     </div>
   )
@@ -104,15 +97,6 @@ export function FrameSavedCard({ rules, onExpand, onEdit }: { rules: { text: str
 
 function Pill({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${className}`}>{children}</span>
-}
-
-function Stat({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-xl p-2.5 ${highlight ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-gray-50'}`}>
-      <div className="text-[10px] text-gray-400">{label}</div>
-      <div className={`mt-0.5 font-extrabold text-sm ${highlight ? 'text-emerald-700' : 'text-[#191919]'}`}>{value}</div>
-    </div>
-  )
 }
 
 export function RecordChip({ onOpenWiki }: { onOpenWiki: () => void }) {

@@ -6,7 +6,7 @@ import { saveFrame } from '@/lib/frameStore'
 import { addRecord } from '@/lib/records'
 import { markStep } from '@/lib/demo'
 import { loadChat, saveChat } from '@/lib/chat'
-import { CompareCard, BacktestCard, FrameSavedCard, RecordChip } from './cards'
+import { CompareCard, ReviewCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
 export interface StockPick { code: string; name: string; price: number; changeRate: number; volume: number; value: number }
@@ -91,7 +91,7 @@ export function ChatPage({
   context: ChatCtx
   frame: Frame | null // null = 내 원칙 없음
   onFrameSaved: (f: Frame) => void
-  onOpenDetail: (d: { kind: 'decision' | 'retro'; code: string }) => void
+  onOpenDetail: (d: { kind: 'decision' | 'retro'; code?: string }) => void
   onOpenWiki: () => void
   onEditFrame: () => void
   onActivity: () => void
@@ -221,11 +221,12 @@ export function ChatPage({
           okCount: t.output.summary.ok,
           violateCount: t.output.summary.violate,
           naCount: t.output.summary.na,
+          priceAtDecision: t.output.quote?.price,
           note: '(대화 중 자동 기록)',
         })
         markStep('compare')
       }
-      if (t.name === 'run_backtest' && t.output?.supported) markStep('retro')
+      if (t.name === 'review_trades' && t.output?.summary) markStep('retro')
     }
   }
 
@@ -255,8 +256,8 @@ export function ChatPage({
                     <RecordChip onOpenWiki={onOpenWiki} />
                   </div>
                 )
-              if (t.name === 'run_backtest' && t.output?.supported)
-                return <BacktestCard key={k} result={t.output} onExpand={() => onOpenDetail({ kind: 'retro', code: t.output.code })} />
+              if (t.name === 'review_trades' && t.output?.summary)
+                return <ReviewCard key={k} result={t.output} onExpand={() => onOpenDetail({ kind: 'retro', code: t.input?.code })} />
               if (t.name === 'update_frame')
                 return <FrameSavedCard key={k} rules={rulesFromToolInput(t.input)} onExpand={onOpenWiki} onEdit={onEditFrame} />
               return null
