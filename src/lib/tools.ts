@@ -2,7 +2,7 @@ import { getQuote } from './market'
 import { getPortfolio, compareToFrame, reviewTrades } from './capabilities'
 import { Frame, rulesFromToolInput } from './frame'
 import { searchStocks } from './stocks'
-import { suggestRules, Focus } from './ruleLibrary'
+import { suggestKeys, BY_KEY, Focus } from './ruleLibrary'
 
 const hasFrame = (f?: Frame) => !!f && f.rules.length > 0
 
@@ -98,9 +98,11 @@ export async function runTool(
       // 서버엔 판단기록(records, 클라 localStorage)이 없으므로 여기 요약은 '보유내역 기반 미리보기'다.
       // 기록까지 포함한 전체 회고는 RetroPage가 /api/review로 records를 실어 다시 계산한다.
       return await reviewTrades(ctx.frame, { code: input?.code })
-    case 'suggest_rules':
-      // 참고용 규칙 후보(결정적). 클라가 탭 칩으로 렌더 → 사용자가 담으면 프레임에 반영.
-      return { rules: suggestRules(input?.focus as Focus | undefined) }
+    case 'suggest_rules': {
+      // 참고용 규칙 후보(결정적). 클라가 슬롯으로 렌더(수치 조정·다른 제안·적용). LLM엔 읽을 수 있게 text도 준다.
+      const keys = suggestKeys(input?.focus as Focus | undefined)
+      return { rules: keys.map((k) => ({ key: k, kind: BY_KEY[k].kind, text: BY_KEY[k].text(BY_KEY[k].params) })) }
+    }
     case 'update_frame': {
       // 저장 자체는 클라이언트가 한다(localStorage). 서버는 실제로 반영될 정제본 기준으로 정직하게 보고한다.
       const rules = rulesFromToolInput(input)

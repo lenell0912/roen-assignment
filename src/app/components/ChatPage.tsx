@@ -6,6 +6,7 @@ import { saveFrame } from '@/lib/frameStore'
 import { addRecord } from '@/lib/records'
 import { markStep } from '@/lib/demo'
 import { loadChat, saveChat } from '@/lib/chat'
+import { BY_KEY, moreKeys, buildRule, RULE_LIBRARY } from '@/lib/ruleLibrary'
 import { CompareCard, ReviewCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
@@ -34,7 +35,7 @@ interface Chip { label: string; text?: string; action?: 'wiki' | 'pickStock'; em
 const KIND_BADGE: Record<string, string> = { buy: 'bg-red-50 text-red-600', sell: 'bg-blue-50 text-blue-600', risk: 'bg-amber-50 text-amber-700' }
 const KIND_LABEL: Record<string, string> = { buy: '매수', sell: '매도', risk: '리스크' }
 
-type LibRuleLike = { key: string; kind: 'buy' | 'sell' | 'risk'; text: string; check?: any }
+type BuiltRule = { id: string; kind: 'buy' | 'sell' | 'risk'; text: string; check?: any }
 
 function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
   if (!hasFrame)
@@ -89,18 +90,25 @@ function MessageText({ content }: { content: string }) {
   )
 }
 
-// 조합 규칙 제안 슬롯 — 여러 규칙을 한 카드에서 골라(스테이징) '적용하기'로 한 번에 반영.
+// 조합 규칙 제안 슬롯 — 한 카드에서 고르고(스테이징) 숫자 조정, '다른 제안 받기'로 후보 교체, '적용하기'로 반영.
 function RuleSuggestSlot({
-  rules,
+  initialKeys,
   frame,
   onApply,
 }: {
-  rules: LibRuleLike[]
+  initialKeys: string[]
   frame: Frame | null
-  onApply: (rules: LibRuleLike[], selected: Set<string>) => void
+  onApply: (shownKeys: string[], selectedRules: BuiltRule[]) => void
 }) {
-  const [sel, setSel] = useState<Set<string>>(() => new Set(rules.filter((r) => frame?.rules.some((x) => x.id === 'lib:' + r.key)).map((r) => r.key)))
+  const inFrame = (key: string) => !!frame?.rules.some((r) => r.id === 'lib:' + key)
+  const [shown, setShown] = useState<string[]>(initialKeys)
+  const [seen, setSeen] = useState<Set<string>>(() => new Set(initialKeys))
+  const [params, setParams] = useState<Record<string, Record<string, number>>>({})
+  const [sel, setSel] = useState<Set<string>>(() => new Set(initialKeys.filter(inFrame)))
   const [applied, setApplied] = useState(false)
+
+  const paramsOf = (key: string) => ({ ...BY_KEY[key].params, ...(params[key] ?? {}) })
+
   function toggle(key: string) {
     setApplied(false)
     setSel((prev) => {
@@ -109,36 +117,79 @@ function RuleSuggestSlot({
       return n
     })
   }
+  function adjust(key: string, name: string, dir: 1 | -1) {
+    const a = BY_KEY[key].adjustable?.find((x) => x.name === name)
+    if (!a) return
+    setApplied(false)
+    setParams((prev) => {
+      const cur = { ...BY_KEY[key].params, ...(prev[key] ?? {}) }
+      const next = Math.max(a.min, Math.min(a.max, (cur[name] ?? a.min) + dir * a.step))
+      return { ...prev, [key]: { ...(prev[key] ?? {}), [name]: next } }
+    })
+  }
+  function getMore() {
+    const next = moreKeys([...seen], 5)
+    setShown(next)
+    setSeen((prev) => {
+      const m = new Set([...prev, ...next])
+      return m.size >= RULE_LIBRARY.length ? new Set(next) : m
+    })
+    setSel(new Set(next.filter(inFrame)))
+    setParams({})
+    setApplied(false)
+  }
+  function apply() {
+    const selected = shown.filter((k) => sel.has(k)).map((k) => buildRule(k, params[k] ?? {})).filter(Boolean) as BuiltRule[]
+    onApply(shown, selected)
+    setApplied(true)
+  }
   const count = sel.size
+
   return (
     <div className="mt-1.5 max-w-[92%] rounded-2xl bg-white border border-black/10 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
       <div className="px-3.5 pt-3 pb-1.5 text-xs font-bold text-[#191919]">
-        이런 규칙은 어때요? <span className="font-medium text-gray-400">눌러서 골라요</span>
+        이런 규칙은 어때요? <span className="font-medium text-gray-400">눌러서 고르고, 숫자는 조정할 수 있어요</span>
       </div>
       <div className="px-1.5 pb-1">
-        {rules.map((r) => {
-          const on = sel.has(r.key)
+        {shown.map((key) => {
+          const rule = BY_KEY[key]
+          if (!rule) return null
+          const on = sel.has(key)
+          const p = paramsOf(key)
           return (
-            <button key={r.key} onClick={() => toggle(r.key)} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-gray-50 transition-colors">
-              <span className={`shrink-0 w-4 h-4 grid place-items-center rounded-[5px] text-[10px] font-bold ${on ? 'bg-[#191919] text-white' : 'border border-gray-300 text-transparent'}`}>✓</span>
-              <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded font-semibold ${KIND_BADGE[r.kind]}`}>{KIND_LABEL[r.kind]}</span>
-              <span className="flex-1 text-xs leading-snug text-gray-800">{r.text}</span>
-            </button>
+            <div key={key} className="px-2 py-1.5">
+              <button onClick={() => toggle(key)} className="w-full flex items-center gap-2.5 text-left">
+                <span className={`shrink-0 w-4 h-4 grid place-items-center rounded-[5px] text-[10px] font-bold ${on ? 'bg-[#191919] text-white' : 'border border-gray-300 text-transparent'}`}>✓</span>
+                <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded font-semibold ${KIND_BADGE[rule.kind]}`}>{KIND_LABEL[rule.kind]}</span>
+                <span className="flex-1 text-xs leading-snug text-gray-800">{rule.text(p)}</span>
+              </button>
+              {on && rule.adjustable && (
+                <div className="mt-1.5 ml-6 flex flex-wrap gap-1.5">
+                  {rule.adjustable.map((a) => (
+                    <div key={a.name} className="flex items-center gap-1 rounded-full bg-gray-100 pl-0.5 pr-0.5 py-0.5">
+                      <button onClick={() => adjust(key, a.name, -1)} aria-label="줄이기" className="w-5 h-5 grid place-items-center rounded-full text-gray-600 hover:bg-white text-sm leading-none">−</button>
+                      <span className="min-w-[34px] text-center text-[11px] font-semibold text-[#191919]">{p[a.name]}{a.unit}</span>
+                      <button onClick={() => adjust(key, a.name, 1)} aria-label="늘리기" className="w-5 h-5 grid place-items-center rounded-full text-gray-600 hover:bg-white text-sm leading-none">+</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )
         })}
       </div>
-      <div className="px-2.5 pt-1.5 pb-2.5 border-t border-gray-100">
+      <div className="px-2.5 pt-1.5 pb-2 border-t border-gray-100 flex gap-2">
+        <button onClick={getMore} className="shrink-0 px-3 py-2.5 rounded-xl border border-gray-300 bg-white text-xs font-semibold text-gray-600 active:bg-gray-50">
+          다른 제안 받기
+        </button>
         <button
-          onClick={() => {
-            onApply(rules, sel)
-            setApplied(true)
-          }}
-          className={`w-full py-2.5 rounded-xl text-sm font-bold transition-colors ${applied ? 'bg-emerald-50 text-emerald-700' : 'bg-[#191919] text-white active:bg-black'}`}
+          onClick={apply}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${applied ? 'bg-emerald-50 text-emerald-700' : 'bg-[#191919] text-white active:bg-black'}`}
         >
           {applied ? `✓ 적용됨 · ${count}개 담김` : `적용하기${count ? ` (${count}개)` : ''}`}
         </button>
-        <div className="mt-1.5 text-center text-[10px] text-gray-400">참고용 예시예요 · 적용 후에도 대화로 다듬을 수 있어요</div>
       </div>
+      <div className="px-3.5 pb-2 text-center text-[10px] text-gray-400">참고용 예시예요 · 적용 후에도 대화로 다듬을 수 있어요</div>
     </div>
   )
 }
@@ -275,15 +326,12 @@ export function ChatPage({
     setMsgs((m) => [...m, { role: 'assistant', content, picks }])
   }
 
-  // 'suggest_rules' 슬롯의 '적용하기' — 슬롯에 표시된 규칙들의 프레임 반영 여부를 선택 상태로 동기화한다.
-  // (그 슬롯에 없는 다른 규칙은 건드리지 않음)
-  function applyLibSelection(slotRules: LibRuleLike[], selectedKeys: Set<string>) {
-    const shownIds = new Set(slotRules.map((r) => 'lib:' + r.key))
+  // 'suggest_rules' 슬롯의 '적용하기' — 슬롯에 표시된 규칙들만 선택 상태로 동기화(고른 건 담고 뺀 건 제거).
+  // 슬롯에 없는 다른 규칙은 그대로 둔다.
+  function applyLibSelection(shownKeys: string[], selectedRules: BuiltRule[]) {
+    const shownIds = new Set(shownKeys.map((k) => 'lib:' + k))
     const kept = (frame?.rules ?? []).filter((r) => !shownIds.has(r.id))
-    const added = slotRules
-      .filter((r) => selectedKeys.has(r.key))
-      .map((r) => ({ id: 'lib:' + r.key, kind: r.kind, text: r.text, check: r.check }))
-    const rules = [...kept, ...added]
+    const rules = [...kept, ...selectedRules]
     const f: Frame = { rules, updatedAt: new Date().toISOString() }
     saveFrame(f)
     onFrameSaved(f)
@@ -356,7 +404,7 @@ export function ChatPage({
               if (t.name === 'update_frame')
                 return <FrameSavedCard key={k} rules={rulesFromToolInput(t.input)} onExpand={onOpenWiki} onEdit={onEditFrame} />
               if (t.name === 'suggest_rules' && t.output?.rules?.length)
-                return <RuleSuggestSlot key={k} rules={t.output.rules} frame={frame} onApply={applyLibSelection} />
+                return <RuleSuggestSlot key={k} initialKeys={t.output.rules.map((r: any) => r.key)} frame={frame} onApply={applyLibSelection} />
               return null
             })}
             {m.picks?.length ? (
