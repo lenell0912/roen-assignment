@@ -34,6 +34,8 @@ interface Chip { label: string; text?: string; action?: 'wiki' | 'pickStock'; em
 const KIND_BADGE: Record<string, string> = { buy: 'bg-red-50 text-red-600', sell: 'bg-blue-50 text-blue-600', risk: 'bg-amber-50 text-amber-700' }
 const KIND_LABEL: Record<string, string> = { buy: '매수', sell: '매도', risk: '리스크' }
 
+type LibRuleLike = { key: string; kind: 'buy' | 'sell' | 'risk'; text: string; check?: any }
+
 function chipsFor(hasFrame: boolean, ctx: ChatCtx): Chip[] {
   if (!hasFrame)
     return [
@@ -84,6 +86,60 @@ function MessageText({ content }: { content: string }) {
         return line.trim() ? <div key={i}>{renderInline(line)}</div> : <div key={i} className="h-2" />
       })}
     </>
+  )
+}
+
+// 조합 규칙 제안 슬롯 — 여러 규칙을 한 카드에서 골라(스테이징) '적용하기'로 한 번에 반영.
+function RuleSuggestSlot({
+  rules,
+  frame,
+  onApply,
+}: {
+  rules: LibRuleLike[]
+  frame: Frame | null
+  onApply: (rules: LibRuleLike[], selected: Set<string>) => void
+}) {
+  const [sel, setSel] = useState<Set<string>>(() => new Set(rules.filter((r) => frame?.rules.some((x) => x.id === 'lib:' + r.key)).map((r) => r.key)))
+  const [applied, setApplied] = useState(false)
+  function toggle(key: string) {
+    setApplied(false)
+    setSel((prev) => {
+      const n = new Set(prev)
+      n.has(key) ? n.delete(key) : n.add(key)
+      return n
+    })
+  }
+  const count = sel.size
+  return (
+    <div className="mt-1.5 max-w-[92%] rounded-2xl bg-white border border-black/10 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <div className="px-3.5 pt-3 pb-1.5 text-xs font-bold text-[#191919]">
+        이런 규칙은 어때요? <span className="font-medium text-gray-400">눌러서 골라요</span>
+      </div>
+      <div className="px-1.5 pb-1">
+        {rules.map((r) => {
+          const on = sel.has(r.key)
+          return (
+            <button key={r.key} onClick={() => toggle(r.key)} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-gray-50 transition-colors">
+              <span className={`shrink-0 w-4 h-4 grid place-items-center rounded-[5px] text-[10px] font-bold ${on ? 'bg-[#191919] text-white' : 'border border-gray-300 text-transparent'}`}>✓</span>
+              <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded font-semibold ${KIND_BADGE[r.kind]}`}>{KIND_LABEL[r.kind]}</span>
+              <span className="flex-1 text-xs leading-snug text-gray-800">{r.text}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="px-2.5 pt-1.5 pb-2.5 border-t border-gray-100">
+        <button
+          onClick={() => {
+            onApply(rules, sel)
+            setApplied(true)
+          }}
+          className={`w-full py-2.5 rounded-xl text-sm font-bold transition-colors ${applied ? 'bg-emerald-50 text-emerald-700' : 'bg-[#191919] text-white active:bg-black'}`}
+        >
+          {applied ? `✓ 적용됨 · ${count}개 담김` : `적용하기${count ? ` (${count}개)` : ''}`}
+        </button>
+        <div className="mt-1.5 text-center text-[10px] text-gray-400">참고용 예시예요 · 적용 후에도 대화로 다듬을 수 있어요</div>
+      </div>
+    </div>
   )
 }
 
@@ -219,16 +275,19 @@ export function ChatPage({
     setMsgs((m) => [...m, { role: 'assistant', content, picks }])
   }
 
-  // 'suggest_rules' 제안 칩 탭 — 그 규칙을 현재 프레임에 담거나(토글) 뺀다. 즉시 저장·반영.
-  function toggleLibRule(r: { key: string; kind: 'buy' | 'sell' | 'risk'; text: string; check?: any }) {
-    const id = 'lib:' + r.key
-    const cur = frame?.rules ?? []
-    const exists = cur.some((x) => x.id === id)
-    const rules = exists ? cur.filter((x) => x.id !== id) : [...cur, { id, kind: r.kind, text: r.text, check: r.check }]
+  // 'suggest_rules' 슬롯의 '적용하기' — 슬롯에 표시된 규칙들의 프레임 반영 여부를 선택 상태로 동기화한다.
+  // (그 슬롯에 없는 다른 규칙은 건드리지 않음)
+  function applyLibSelection(slotRules: LibRuleLike[], selectedKeys: Set<string>) {
+    const shownIds = new Set(slotRules.map((r) => 'lib:' + r.key))
+    const kept = (frame?.rules ?? []).filter((r) => !shownIds.has(r.id))
+    const added = slotRules
+      .filter((r) => selectedKeys.has(r.key))
+      .map((r) => ({ id: 'lib:' + r.key, kind: r.kind, text: r.text, check: r.check }))
+    const rules = [...kept, ...added]
     const f: Frame = { rules, updatedAt: new Date().toISOString() }
     saveFrame(f)
     onFrameSaved(f)
-    if (!exists && rules.length) markStep('frame')
+    if (rules.length) markStep('frame')
     onActivity()
   }
 
@@ -297,27 +356,7 @@ export function ChatPage({
               if (t.name === 'update_frame')
                 return <FrameSavedCard key={k} rules={rulesFromToolInput(t.input)} onExpand={onOpenWiki} onEdit={onEditFrame} />
               if (t.name === 'suggest_rules' && t.output?.rules?.length)
-                return (
-                  <div key={k} className="mt-1.5 flex flex-col gap-1.5 max-w-[92%]">
-                    {t.output.rules.map((r: any) => {
-                      const added = !!frame?.rules.some((x) => x.id === 'lib:' + r.key)
-                      return (
-                        <button
-                          key={r.key}
-                          onClick={() => toggleLibRule(r)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-colors ${
-                            added ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-black/10 hover:border-black/25'
-                          }`}
-                        >
-                          <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded font-semibold ${KIND_BADGE[r.kind]}`}>{KIND_LABEL[r.kind]}</span>
-                          <span className="flex-1 text-xs leading-snug">{r.text}</span>
-                          <span className={`shrink-0 text-sm font-bold ${added ? 'text-emerald-600' : 'text-gray-300'}`}>{added ? '✓' : '+'}</span>
-                        </button>
-                      )
-                    })}
-                    <span className="px-1 text-[10px] text-gray-400">눌러서 담기 · 참고용 예시예요(투자자문 아님)</span>
-                  </div>
-                )
+                return <RuleSuggestSlot key={k} rules={t.output.rules} frame={frame} onApply={applyLibSelection} />
               return null
             })}
             {m.picks?.length ? (
