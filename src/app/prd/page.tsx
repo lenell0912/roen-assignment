@@ -468,11 +468,12 @@ function AiUsage() {
   const principles: [string, string][] = [
     ['결정론 / LLM 분리', 'LLM은 이해·추출·제안만, 신호·엣지·수치 판정은 결정론적 코드로. 환각을 막고 결과를 검증 가능하게'],
     ['정직한 범위 표기', '실데이터로 되는 것만 “실데이터”, 안 되는 건 “미지원·범위 밖”으로 명시 — 과장 없이'],
-    ['회귀 안전망', '코어 로직 TDD(테스트 60개 통과)·타입 체크로 매 변경을 자동 검증'],
+    ['회귀 안전망', '코어 로직 TDD(테스트 66개 통과)·타입 체크로 매 변경을 자동 검증'],
   ]
   const tools = [
     'Claude Code · 서브에이전트 오케스트레이션',
     'MCP(로고 생성 등)',
+    '힉스필드(Higgsfield) MCP · 이미지 생성',
     '브라우저 자동화 자가검증',
     'Next.js · TypeScript',
     '실데이터(토스증권 · Yahoo)',
@@ -510,15 +511,12 @@ function AiUsage() {
         ))}
       </div>
 
-      {/* 3) 도구 + 메타 강조 */}
+      {/* 3) 도구 */}
       <Card>
         <div className="flex flex-wrap gap-1.5">
           {tools.map((t) => (
             <span key={t} className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{t}</span>
           ))}
-        </div>
-        <div className="mt-3 rounded-xl bg-[#FFF9DB] border border-[#FFEC47] p-3 text-sm text-[#191919] leading-relaxed">
-          이 <b>PRD · 프로토타입 · 지금 보시는 이 문서</b>까지 전부 이 방식으로 만들었어요. 금융/투자 도메인에서 <b>0 → 1</b>을, 요청 한 번에 <b>기능 추가 → 브라우저 검증 → 커밋</b>으로 돌립니다.
         </div>
       </Card>
     </section>
@@ -626,7 +624,7 @@ function Risks() {
     ['투자자문 규제', "자문이 아닌 '보완' — 개별 종목 매수·매도 지시 안 함, 면책 고지"],
     ['데이터/자막 한계', '제공자 추상화(토스↔Yahoo 스왑) + 온램프 폴백'],
     ['채택 저항(프레임=노동)', 'AI가 대화로 초안 대신 작성 + 예시 프레임 제공'],
-    ['LLM 남용·프롬프트 인젝션', '도메인 화이트리스트 제한 + 내·외부 지시 무시 + 시스템 프롬프트 비노출'],
+    ['LLM 남용·프롬프트 인젝션·키 소진', '도메인 화이트리스트 제한 + 내·외부 지시 무시 + 시스템 프롬프트 비노출 + API 요청 rate limit(IP·일일 상한)'],
   ]
   return (
     <section className="space-y-4">
