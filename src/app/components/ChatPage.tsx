@@ -376,7 +376,7 @@ export function ChatPage({
             }}
             className={
               c.emphasis
-                ? 'shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-[#FFEC47] text-[#191919] ring-1 ring-[#191919]/15 shadow-sm hover:bg-[#FFE01A] transition-colors animate-[pulse_1.6s_ease-in-out_2]'
+                ? 'shrink-0 text-xs font-bold px-3 py-1.5 rounded-full bg-[#FFEC47] text-[#191919] hover:bg-[#FFE01A] transition-colors animate-[pulse_1.6s_ease-in-out_2]'
                 : 'shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-[#FFF3BF] text-[#191919] hover:bg-[#FFEA8A] transition-colors'
             }
           >
