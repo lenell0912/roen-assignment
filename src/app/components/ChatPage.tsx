@@ -11,7 +11,7 @@ import { CompareCard, ReviewCard, FrameSavedCard, RecordChip } from './cards'
 
 export interface UsedTool { name: string; input: any; output?: any }
 export interface StockPick { code: string; name: string; price: number; changeRate: number; volume: number; value: number }
-interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[]; ctxGreetCode?: string; divider?: string }
+interface Msg { role: 'user' | 'assistant'; content: string; tools?: UsedTool[]; picks?: StockPick[]; ctxGreetCode?: string; divider?: string; frameRules?: { text: string }[] }
 
 export interface ChatCtx { code?: string; name?: string }
 
@@ -329,6 +329,7 @@ export function ChatPage({
   // 'suggest_rules' 슬롯의 '적용하기' — 슬롯에 표시된 규칙들만 선택 상태로 동기화(고른 건 담고 뺀 건 제거).
   // 슬롯에 없는 다른 규칙은 그대로 둔다.
   function applyLibSelection(shownKeys: string[], selectedRules: BuiltRule[]) {
+    const wasEmpty = !(frame && frame.rules.length)
     const shownIds = new Set(shownKeys.map((k) => 'lib:' + k))
     const kept = (frame?.rules ?? []).filter((r) => !shownIds.has(r.id))
     const rules = [...kept, ...selectedRules]
@@ -337,6 +338,21 @@ export function ChatPage({
     onFrameSaved(f)
     if (rules.length) markStep('frame')
     onActivity()
+    // 적용 후 에이전트가 정리 카드 + (첫 생성이면) 종목 대조 제안을 선제적으로 띄운다
+    if (!rules.length) return
+    const added: Msg[] = [
+      {
+        role: 'assistant',
+        content: wasEmpty ? '좋아요, 매매 원칙을 이렇게 정리했어요! 언제든 위키에서 다듬을 수 있어요.' : '원칙을 업데이트했어요. 지금은 이렇게예요.',
+        frameRules: rules.map((r) => ({ text: r.text })),
+      },
+    ]
+    if (wasEmpty)
+      added.push({
+        role: 'assistant',
+        content: '이제 종목을 말해주시면 이 원칙에 실데이터로 대조해드릴게요 — 예: “삼성전자 지금 사도 될까?” 아래 “종목에 내 원칙을 대조” 칩으로도 바로 눌러볼 수 있어요.',
+      })
+    setMsgs((m) => [...m, ...added])
   }
 
   // 도구 사용의 클라이언트 부수효과: 프레임 저장 · 자동 기록 · 데모 스텝 체크
@@ -407,6 +423,7 @@ export function ChatPage({
                 return <RuleSuggestSlot key={k} initialKeys={t.output.rules.map((r: any) => r.key)} frame={frame} onApply={applyLibSelection} />
               return null
             })}
+            {m.frameRules?.length ? <FrameSavedCard rules={m.frameRules} onExpand={onOpenWiki} onEdit={onEditFrame} /> : null}
             {m.picks?.length ? (
               <div className="mt-1.5 flex flex-col gap-1.5 max-w-[88%]">
                 {m.picks.map((p, k) => {
