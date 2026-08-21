@@ -35,13 +35,14 @@ async function authGet(path: string): Promise<any> {
 
 export const tossProvider: MarketData = {
   async getQuote(code: string): Promise<Quote> {
-    const j = await authGet(`/api/v1/prices?symbols=${code}`)
+    const sym = encodeURIComponent(code)
+    const j = await authGet(`/api/v1/prices?symbols=${sym}`)
     const price = Number(j.result?.[0]?.lastPrice)
     if (!Number.isFinite(price) || price <= 0) throw new Error('Toss quote invalid')
     // prices 응답엔 등락률이 없어 최근 2 일봉으로 계산
     let changeRate = 0
     try {
-      const c = await authGet(`/api/v1/candles?symbol=${code}&interval=1d&count=2`)
+      const c = await authGet(`/api/v1/candles?symbol=${sym}&interval=1d&count=2`)
       const cs = (c.result?.candles ?? []).map((r: any) => Number(r.closePrice)) // 최신→과거
       if (cs.length >= 2 && cs[1]) changeRate = ((cs[0] - cs[1]) / cs[1]) * 100
     } catch {}
@@ -50,7 +51,7 @@ export const tossProvider: MarketData = {
 
   async getDailyCandles(code: string, days = 120): Promise<Candle[]> {
     const count = Math.min(Math.max(days, 30), 200)
-    const j = await authGet(`/api/v1/candles?symbol=${code}&interval=1d&count=${count}`)
+    const j = await authGet(`/api/v1/candles?symbol=${encodeURIComponent(code)}&interval=1d&count=${count}`)
     const rows: any[] = j.result?.candles ?? []
     // 응답은 최신→과거 → 과거→최신으로 뒤집음
     const out = rows

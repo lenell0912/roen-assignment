@@ -14,6 +14,7 @@ const DAILY_GLOBAL_CAP = Number(process.env.LLM_DAILY_CAP ?? 800)
 export interface RateOpts {
   perIp: number // 윈도우당 IP 허용 횟수
   windowMs: number // 윈도우 길이
+  countGlobal?: boolean // 전역 일일 상한에 포함할지 — LLM(비용) 라우트만 true. 시장데이터는 IP 제한만.
 }
 export interface RateResult {
   ok: boolean
@@ -27,7 +28,7 @@ export function rateLimit(ip: string, opts: RateOpts, now: number = Date.now()):
     dayStart = now
     dayCount = 0
   }
-  if (dayCount >= DAILY_GLOBAL_CAP) {
+  if (opts.countGlobal && dayCount >= DAILY_GLOBAL_CAP) {
     return { ok: false, reason: 'global', retryAfterSec: Math.ceil((dayStart + DAY_MS - now) / 1000) }
   }
 
@@ -39,7 +40,7 @@ export function rateLimit(ip: string, opts: RateOpts, now: number = Date.now()):
 
   recent.push(now)
   ipHits.set(ip, recent)
-  dayCount++
+  if (opts.countGlobal) dayCount++
 
   // 맵 무한 증식 방지 — 가끔 만료된 IP 정리
   if (ipHits.size > 5000) {

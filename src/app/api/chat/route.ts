@@ -3,21 +3,15 @@ import Anthropic from '@anthropic-ai/sdk'
 import { buildSystem, ChatContext } from '@/lib/persona'
 import { TOOLS, runTool } from '@/lib/tools'
 import { searchStocks } from '@/lib/stocks'
-import { rateLimit, clientIp } from '@/lib/rateLimit'
+import { checkRate } from '@/lib/apiGuard'
 
 const client = new Anthropic()
 const MODEL = 'claude-sonnet-5'
 
 export async function POST(req: NextRequest) {
-  // 공개 데모 API 키 보호 — IP당 5분에 30회, 그리고 전역 일일 상한(공유)
-  const rl = rateLimit(clientIp(req), { perIp: 30, windowMs: 5 * 60_000 })
-  if (!rl.ok) {
-    const msg =
-      rl.reason === 'global'
-        ? '오늘 데모 이용량이 많아 잠시 쉬어가요. 내일 다시 시도해 주세요. 🙏'
-        : '잠깐만요 — 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요.'
-    return NextResponse.json({ error: msg }, { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec ?? 60) } })
-  }
+  // 공개 데모 API 키 보호 — IP당 5분에 30회 + 전역 일일 상한(LLM 라우트 공유)
+  const limited = checkRate(req, 'chat', { perIp: 30, windowMs: 5 * 60_000, countGlobal: true })
+  if (limited) return limited
 
   const { messages, context } = (await req.json()) as {
     messages: { role: 'user' | 'assistant'; content: any }[]

@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getTradingValueRanking } from '@/lib/market'
 import { STOCKS } from '@/lib/stocks'
+import { checkRate, serverError } from '@/lib/apiGuard'
 
 // 거래대금 상위 후보 유니버스 — 잘 알려진 유동성 높은 국내 대형·중형주.
 // 이 안에서 최근 거래일 실거래대금(가격×거래량) 기준으로 top5 를 뽑는다(실데이터).
@@ -12,7 +13,10 @@ const UNIVERSE = [
 
 export const revalidate = 300 // 5분 캐시 — 시세 서버 과호출 방지
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const limited = checkRate(req, 'market', { perIp: 60, windowMs: 60_000 })
+  if (limited) return limited
+
   try {
     const ranked = await getTradingValueRanking(UNIVERSE, 5)
     if (!ranked.length) return NextResponse.json({ error: '랭킹을 만들 데이터가 없어요' }, { status: 502 })
@@ -21,7 +25,7 @@ export async function GET() {
       name: STOCKS.find((s) => s.code === r.code)?.name ?? `종목 ${r.code}`,
     }))
     return NextResponse.json({ stocks })
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e.message) }, { status: 502 })
+  } catch (e) {
+    return serverError('hot', e)
   }
 }
