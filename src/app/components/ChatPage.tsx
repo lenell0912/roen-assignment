@@ -90,6 +90,21 @@ function MessageText({ content }: { content: string }) {
   )
 }
 
+// '입력 중' 표시 — 어시스트 말풍선 안에 통통 튀는 점 3개.
+function TypingBubble() {
+  return (
+    <div>
+      <div className="inline-block px-3.5 py-3 rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+        <span className="flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" />
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // 조합 규칙 제안 슬롯 — 한 카드에서 고르고(스테이징) 숫자 조정, '다른 제안 받기'로 후보 교체, '적용하기'로 반영.
 function RuleSuggestSlot({
   initialKeys,
@@ -215,7 +230,13 @@ export function ChatPage({
   const [msgs, setMsgs] = useState<Msg[]>([{ role: 'assistant', content: openingText(hasFrame, context), ctxGreetCode: context.code }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [typing, setTyping] = useState(false) // 클라 선제 메시지용 '입력 중' 표시
   const [hydrated, setHydrated] = useState(false)
+  const aliveRef = useRef(true)
+  useEffect(() => {
+    aliveRef.current = true
+    return () => { aliveRef.current = false }
+  }, [])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -308,6 +329,19 @@ export function ChatPage({
     setLoading(false)
   }
 
+  // 클라이언트 선제 메시지를 '입력 중' 표시 후 하나씩 내보낸다(움직이는 타이핑 → 말풍선).
+  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+  async function speak(seq: Msg[]) {
+    for (let i = 0; i < seq.length; i++) {
+      setTyping(true)
+      await sleep(650)
+      if (!aliveRef.current) return
+      setTyping(false)
+      setMsgs((m) => [...m, seq[i]])
+      if (i < seq.length - 1) await sleep(320)
+    }
+  }
+
   // '종목에 내 원칙을 대조' 칩 — 바로 특정 종목으로 가지 않고 "어떤 종목?"을 되물으며
   // 지금 거래량 많은 종목 top5(실데이터)를 대화 안에서 선택지로 제시한다.
   async function askWhichStock() {
@@ -323,7 +357,7 @@ export function ChatPage({
     const content = picks.length
       ? '어떤 종목을 대조해볼까요? 지금 거래대금이 많은 종목이에요 — 눌러서 고르거나, 다른 종목명을 입력해도 돼요.'
       : '어떤 종목을 대조해볼까요? 종목명을 입력해 주세요. (예: 삼성전자)'
-    setMsgs((m) => [...m, { role: 'assistant', content, picks }])
+    speak([{ role: 'assistant', content, picks }])
   }
 
   // 'suggest_rules' 슬롯의 '적용하기' — 슬롯에 표시된 규칙들만 선택 상태로 동기화(고른 건 담고 뺀 건 제거).
@@ -351,7 +385,7 @@ export function ChatPage({
         content: '이제 종목을 말해주시면 이 원칙에 실데이터로 대조해드릴게요 — 예: “삼성전자 지금 사도 될까?” 아래 “종목에 내 원칙을 대조” 칩으로도 바로 눌러볼 수 있어요.',
       },
     ]
-    setMsgs((m) => [...m, ...added])
+    speak(added)
   }
 
   // 도구 사용의 클라이언트 부수효과: 프레임 저장 · 자동 기록 · 데모 스텝 체크
@@ -383,7 +417,7 @@ export function ChatPage({
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight)
-  }, [msgs, loading])
+  }, [msgs, loading, typing])
 
   const chips = chipsFor(hasFrame, context)
 
@@ -450,7 +484,7 @@ export function ChatPage({
           </div>
           )
         )}
-        {loading && <div className="text-xs text-gray-400">Frame이 실데이터로 확인 중…</div>}
+        {(loading || typing) && <TypingBubble />}
       </div>
 
       {/* 하단 바 — 반투명 디바이더 + 칩 + 입력. 채팅이 이 아래로 스크롤된다. */}
