@@ -16,14 +16,14 @@ export function HomeScreen({ onSearch, pulseSearch }: { onSearch: () => void; pu
       <div className={hasShot ? 'absolute inset-0 ios-scroll bg-white' : 'hidden'}>
         <div className="relative">
           <img ref={imgRef} src="/home.png" alt="" onLoad={() => setHasShot(true)} className="w-full block select-none" />
-          {/* 투명 검색 핫스팟: 헤더 우측 돋보기 위 (이미지 비율 기준 배치) */}
+          {/* 투명 검색 핫스팟: 헤더 우측 돋보기(🔍) 위 — home.png 실측 비율 기준(중심 ≈ x70.6% y2.8%) */}
           <button
             aria-label="종목 검색"
             onClick={onSearch}
             className={`absolute z-30 rounded-full ${
               pulseSearch ? 'ring-4 ring-yellow-300 animate-pulse bg-yellow-200/40' : 'opacity-0'
             }`}
-            style={{ top: '0.55%', left: '68%', width: '10%', height: '1.5%' }}
+            style={{ top: '2.1%', left: '66.3%', width: '8.6%', height: '1.4%' }}
           />
         </div>
       </div>
