@@ -17,11 +17,22 @@ export const yahooProvider: MarketData = {
         const q: any = await yahooFinance.quote(symbol)
         const price = Number(q?.regularMarketPrice)
         if (!Number.isFinite(price) || price <= 0) throw new Error('Yahoo quote invalid')
+        const num = (v: any) => (Number.isFinite(Number(v)) ? Number(v) : undefined)
         return {
           code,
           name: q.shortName ?? q.longName,
           price,
           changeRate: Number(q.regularMarketChangePercent),
+          change: num(q.regularMarketChange),
+          prevClose: num(q.regularMarketPreviousClose),
+          open: num(q.regularMarketOpen),
+          dayHigh: num(q.regularMarketDayHigh),
+          dayLow: num(q.regularMarketDayLow),
+          volume: num(q.regularMarketVolume),
+          marketCap: num(q.marketCap),
+          week52High: num(q.fiftyTwoWeekHigh),
+          week52Low: num(q.fiftyTwoWeekLow),
+          per: num(q.trailingPE),
         }
       } catch (e) {
         lastErr = e
