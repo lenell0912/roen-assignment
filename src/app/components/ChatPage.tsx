@@ -70,11 +70,13 @@ function colorizeSigned(text: string, keyBase: string): React.ReactNode[] {
 
 // 에이전트 발화용 경량 마크다운 — **볼드**, 불릿(-/•), 번호목록, 줄바꿈 + 방향성 수치 색칠
 function renderInline(text: string, keyBase = 'i'): React.ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).flatMap((p, i) => {
+  const out: React.ReactNode[] = []
+  text.split(/(\*\*[^*]+\*\*)/g).forEach((p, i) => {
     const m = /^\*\*([^*]+)\*\*$/.exec(p)
-    if (m) return [<strong key={`${keyBase}-b-${i}`} className="font-bold">{colorizeSigned(m[1], `${keyBase}-b-${i}`)}</strong>]
-    return colorizeSigned(p, `${keyBase}-t-${i}`)
+    if (m) out.push(<strong key={`${keyBase}-b-${i}`} className="font-bold">{colorizeSigned(m[1], `${keyBase}-b-${i}`)}</strong>)
+    else out.push(...colorizeSigned(p, `${keyBase}-t-${i}`))
   })
+  return out
 }
 
 function MessageText({ content }: { content: string }) {
