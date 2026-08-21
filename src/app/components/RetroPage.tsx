@@ -26,15 +26,16 @@ export function RetroPage({ code, frame, setFrame }: { code?: string; frame: Fra
       .then((r) => r.json())
       .then((rv: TradeReview & { error?: string }) => {
         if (!alive) return
-        if (rv.error) { setFailed(true); return }
+        if (rv.error) { setFailed(true); setLoading(false); return }
         setReview(rv)
-        return fetch('/api/evolve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frame, review: rv }) })
+        setLoading(false) // 회고 결과는 바로 보여주고, 진화 제안(LLM)은 뒤이어 채운다
+        // 진화 제안은 백그라운드로 — 로딩 스피너를 붙잡지 않는다
+        fetch('/api/evolve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ frame, review: rv }) })
           .then((r) => r.json())
           .then((e) => { if (alive) setEvo(e) })
           .catch(() => {})
       })
-      .catch(() => { if (alive) setFailed(true) })
-      .finally(() => { if (alive) setLoading(false) })
+      .catch(() => { if (alive) { setFailed(true); setLoading(false) } })
     return () => { alive = false }
   }, [code, frame])
 

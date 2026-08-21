@@ -86,8 +86,3 @@ export async function proposeEvolution(frame: Frame, review: TradeReview): Promi
         : '지금 프레임은 데이터상 크게 손 볼 곳이 없어 보여.'
   return { suggestion, proposal }
 }
-
-function fmt(v: number | null) {
-  if (v == null) return '—'
-  return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
-}

@@ -83,8 +83,9 @@ export function summarizeReview(items: ReviewItem[]): ReviewSummary {
   const edge = followedAvg != null && brokeAvg != null ? followedAvg - brokeAvg : null
   let verdict: string
   if (edge == null) verdict = '아직 판단하기 일러요 — 원칙을 지킨 매매와 어긴 매매가 둘 다 쌓여야 비교돼요. (표본 부족)'
-  else if (edge >= 0) verdict = `원칙을 지킨 매매가 평균 +${edge.toFixed(1)}%p 나았어요 — 규칙이 도움이 된 신호예요. (표본 적음, 참고만)`
-  else verdict = `원칙을 지킨 매매가 평균 ${edge.toFixed(1)}%p 낮았어요 — 규칙을 의심해볼 신호예요. (표본 적음, 참고만)`
+  else if (edge > 0) verdict = `원칙을 지킨 매매가 평균 +${edge.toFixed(1)}%p 나았어요 — 규칙이 도움이 된 신호예요. (표본 적음, 참고만)`
+  else if (edge < 0) verdict = `원칙을 지킨 매매가 평균 ${edge.toFixed(1)}%p 낮았어요 — 규칙을 의심해볼 신호예요. (표본 적음, 참고만)`
+  else verdict = '원칙을 지킨 매매와 어긴 매매의 성과 차이가 거의 없어요. (표본 적음, 참고만)'
   return { followedAvg, brokeAvg, edge, verdict, nFollowed: followed.length, nBroke: broke.length }
 }
 

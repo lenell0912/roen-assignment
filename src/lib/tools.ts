@@ -85,6 +85,8 @@ export async function runTool(
     case 'review_trades':
       if (!hasFrame(ctx.frame))
         return { noFrame: true, note: '사용자의 매매 원칙이 아직 없다. 원칙부터 만들자고 제안해라.' }
+      // 서버엔 판단기록(records, 클라 localStorage)이 없으므로 여기 요약은 '보유내역 기반 미리보기'다.
+      // 기록까지 포함한 전체 회고는 RetroPage가 /api/review로 records를 실어 다시 계산한다.
       return await reviewTrades(ctx.frame, { code: input?.code })
     case 'update_frame': {
       // 저장 자체는 클라이언트가 한다(localStorage). 서버는 실제로 반영될 정제본 기준으로 정직하게 보고한다.
