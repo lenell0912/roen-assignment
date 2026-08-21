@@ -346,12 +346,11 @@ export function ChatPage({
         content: wasEmpty ? '좋아요, 매매 원칙을 이렇게 정리했어요! 언제든 위키에서 다듬을 수 있어요.' : '원칙을 업데이트했어요. 지금은 이렇게예요.',
         frameRules: rules.map((r) => ({ text: r.text })),
       },
-    ]
-    if (wasEmpty)
-      added.push({
+      {
         role: 'assistant',
         content: '이제 종목을 말해주시면 이 원칙에 실데이터로 대조해드릴게요 — 예: “삼성전자 지금 사도 될까?” 아래 “종목에 내 원칙을 대조” 칩으로도 바로 눌러볼 수 있어요.',
-      })
+      },
+    ]
     setMsgs((m) => [...m, ...added])
   }
 
