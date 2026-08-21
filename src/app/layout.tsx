@@ -2,7 +2,7 @@ import './globals.css'
 import type { ReactNode } from 'react'
 
 export const metadata = {
-  title: 'AI 투자 Frame — 나만의 거래 프레임',
+  title: 'AI 투자 에이전트 Frame',
   description: '답을 주지 않고, 너의 판단 프레임을 키운다',
 }
 
