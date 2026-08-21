@@ -69,7 +69,7 @@ export function DecisionPage({ code, frame }: { code: string; frame: Frame }) {
       </div>
 
       <div className="mt-4 p-3 bg-amber-50 rounded-lg text-amber-800 text-xs">
-        ⚠️ 이건 "사라/팔아라"가 아니라 네 프레임에 비춘 결과야. <b>왜 지금인지</b> 스스로 답할 수 있을 때 결정해.
+        ⚠️ 이건 "사라/팔아라"가 아니라 내 원칙에 비춘 결과예요. <b>왜 지금인지</b> 스스로 답할 수 있을 때 결정하세요.
       </div>
 
       <div className="mt-4">
