@@ -4,7 +4,7 @@
 
 **답을 주는 봇이 아니라, 판단력을 키우는 에이전트.** 모두가 시그널·예측을 줄 때 Frame은 일부러 답을 드리지 않고, 결정 직전에 사용자의 매매 원칙(프레임)을 실데이터로 대조해 근거 있는 결정을 늘립니다.
 
-- 🔗 **라이브 데모:** `여기에 배포 URL 입력` <!-- 예: https://roen-assignment.vercel.app -->
+- 🔗 **라이브 데모:** https://roen-assign.vercel.app
 - 📄 **기획서(PRD):** 데모 접속 후 우측 상단 `기획서(PRD)` 또는 `/prd`
 - 💻 **GitHub:** https://github.com/lenell0912/roen-assignment
 
