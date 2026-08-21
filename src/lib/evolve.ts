@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { Frame } from './frame'
-import { RuleEdge } from './edges'
+import { TradeReview } from './review'
 
 const client = new Anthropic()
 const MODEL = 'claude-sonnet-5'
@@ -17,13 +17,14 @@ export interface Evolution {
   proposal: Proposal | null
 }
 
-export async function proposeEvolution(code: string, frame: Frame, edges: RuleEdge[]): Promise<Evolution> {
-  const edgeLines = edges
-    .map((e) => {
-      if (!e.scorable) return `- [${e.ruleId}] "${e.text}": 과거 데이터로 채점 불가`
-      return `- [${e.ruleId}] "${e.text}": 지킨날 ${fmt(e.satisfiedAvg)} vs 어긴날 ${fmt(e.violatedAvg)} → 엣지 ${fmt(e.edge)}p (표본 ${e.nSat}/${e.nViol})`
+export async function proposeEvolution(frame: Frame, review: TradeReview): Promise<Evolution> {
+  const edgeLines = review.items
+    .map((it) => {
+      const perf = it.returnPct == null ? '관찰 중(경과 짧음)' : `${it.returnPct >= 0 ? '+' : ''}${it.returnPct.toFixed(1)}%`
+      return `- (${it.source}) ${it.name}: 부합 ${it.fit.ok}·위반 ${it.fit.violate}·미지원 ${it.fit.na}, 이후 성과 ${perf}`
     })
-    .join('\n')
+    .join('\n') || '- (아직 회고할 매매가 없음)'
+  const summaryLine = review.summary.verdict
   const ruleLines = frame.rules
     .map((r) => `- [${r.id}] (${r.kind}) "${r.text}"${r.check ? ` check=${JSON.stringify(r.check)}` : ''}`)
     .join('\n')
@@ -64,9 +65,10 @@ export async function proposeEvolution(code: string, frame: Frame, edges: RuleEd
       {
         role: 'user',
         content:
-          `종목 ${code}에 대해 사용자의 거래 프레임을 "그 사용자의 데이터로 채점"한 결과다. 엣지가 낮거나 음수인 규칙은 완화(loosen)/삭제(drop)를, 엣지가 뚜렷한 규칙은 유지(keep)를 제안하라. ` +
-          `개정은 최대 1개 규칙만, 반드시 엣지 숫자에 근거해서. 머신체크 숫자 파라미터는 paramPatch로 구체 값을 제시(예: 고점회피 기준 10→5면 {"minPctBelowHigh":5}). ` +
-          `과최적화 위험도 한 줄 경고에 포함하라.\n\n[프레임]\n${ruleLines}\n\n[규칙별 엣지]\n${edgeLines}`,
+          `사용자의 실제 매매(보유내역·판단기록)를 그의 거래 프레임으로 "돌아본" 결과다. 표본이 적으니 단정 말고 방향만. ` +
+          `성과가 프레임 부합과 어떻게 갈리는지 보고, 규칙 1개 개정(tighten/loosen/keep/drop)을 근거와 함께 제안하라. ` +
+          `머신체크 숫자 파라미터는 paramPatch로 구체 값을. 과최적화 위험을 한 줄 경고에 포함하라.\n\n` +
+          `[운/실력 요약]\n${summaryLine}\n\n[프레임]\n${ruleLines}\n\n[매매별 회고]\n${edgeLines}`,
       },
     ],
   })
