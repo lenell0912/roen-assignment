@@ -458,27 +458,68 @@ function Roadmap() {
 }
 
 function AiUsage() {
+  const pipeline: [string, string][] = [
+    ['문제 정의 · PRD', 'Claude와 “질문 우선” 브레인스토밍으로 표면 요구가 아니라 “프레임(판단 기준) 부재”라는 진짜 문제까지 파고들어 정의'],
+    ['설계', '합의된 내용을 스펙 문서 → 구현 계획으로 구조화(docs/specs·plans). “무엇을·왜”를 코드보다 먼저 고정'],
+    ['구현', '태스크별 서브에이전트를 병렬로 오케스트레이션하고, 각 태스크마다 스펙 준수 → 코드 품질 2단 리뷰 게이트를 통과시킴'],
+    ['검증', '브라우저 자동화로 에이전트가 직접 시연·확인(스크린샷·DOM·콘솔·실측)하고, 통과분만 커밋'],
+    ['반복', '실데이터 프로토타입에서 바로 확인 → 대화 한 번에 개선·재검증(Build → Measure → Learn)'],
+  ]
+  const principles: [string, string][] = [
+    ['결정론 / LLM 분리', 'LLM은 이해·추출·제안만, 신호·엣지·수치 판정은 결정론적 코드로. 환각을 막고 결과를 검증 가능하게'],
+    ['정직한 범위 표기', '실데이터로 되는 것만 “실데이터”, 안 되는 건 “미지원·범위 밖”으로 명시 — 과장 없이'],
+    ['회귀 안전망', '코어 로직 TDD(테스트 60개 통과)·타입 체크로 매 변경을 자동 검증'],
+  ]
+  const tools = [
+    'Claude Code · 서브에이전트 오케스트레이션',
+    'MCP(로고 생성 등)',
+    '브라우저 자동화 자가검증',
+    'Next.js · TypeScript',
+    '실데이터(토스증권 · Yahoo)',
+  ]
   return (
     <section className="space-y-4">
-      <H2 id="ai" kicker="How we used AI · AI 활용" title="AI로 어떻게 만들었나요" />
+      <H2 id="ai" kicker="How we build · AI 프로덕트 빌딩" title="AI로 어떻게 만들고 검증하나요" />
+
+      {/* 1) End-to-End 파이프라인 */}
       <Card>
-        <ul className="text-sm text-gray-600 space-y-1.5 list-disc ml-4">
-          <li>
-            <b>기획</b>: Claude와 브레인스토밍→스펙→구현계획을 반복하며, 문제 정의를 프레임 부재까지 파고들었습니다.
-          </li>
-          <li>
-            <b>제품 자체가 에이전트</b>: Claude Sonnet과 도구(시세·프레임 대조·회고)로 human-in-the-loop 에이전트를 구현했습니다.
-          </li>
-          <li>
-            <b>신뢰 설계</b>: LLM은 "이해·추출·제안"만 맡고, 신호·엣지 계산은 결정론적 코드로 분리했습니다 (환각 방지·검증 가능).
-          </li>
-          <li>
-            <b>구현</b>: Next.js로 스캐폴드→실데이터 연동→에이전트→미니앱 페이지까지 AI 페어로 개발하고, TDD로 코어를 검증했습니다.
-          </li>
-          <li>
-            <b>로고</b>: 힉스필드(Higgsfield) MCP를 활용해 브랜드 로고 이미지를 생성했습니다.
-          </li>
-        </ul>
+        <div className="text-xs font-bold text-gray-400 mb-2">문제 정의부터 검증까지 — 재현 가능한 파이프라인</div>
+        <ol className="space-y-2.5">
+          {pipeline.map(([label, desc], i) => (
+            <li key={label} className="flex gap-2.5">
+              <span className="shrink-0 w-5 h-5 grid place-items-center rounded-full bg-[#191919] text-white text-[10px] font-extrabold">{i + 1}</span>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-[#191919]">{label}</div>
+                <div className="text-xs text-gray-600 leading-relaxed">{desc}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-3 text-[11px] text-gray-400 leading-relaxed">
+          바이브 코딩을 “즉흥”이 아니라 <b className="text-gray-600">스킬 기반의 구조화된 오케스트레이션</b>으로 — 개인 생산성을 넘어 팀이 재현할 수 있는 일하는 방식으로 설계했습니다.
+        </div>
+      </Card>
+
+      {/* 2) 신뢰 원칙 */}
+      <div className="grid sm:grid-cols-3 gap-2">
+        {principles.map(([t, d]) => (
+          <div key={t} className="rounded-xl bg-white border border-black/5 p-3">
+            <div className="text-sm font-bold text-[#191919]">{t}</div>
+            <div className="mt-1 text-xs text-gray-600 leading-relaxed">{d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 3) 도구 + 메타 강조 */}
+      <Card>
+        <div className="flex flex-wrap gap-1.5">
+          {tools.map((t) => (
+            <span key={t} className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{t}</span>
+          ))}
+        </div>
+        <div className="mt-3 rounded-xl bg-[#FFF9DB] border border-[#FFEC47] p-3 text-sm text-[#191919] leading-relaxed">
+          이 <b>PRD · 프로토타입 · 지금 보시는 이 문서</b>까지 전부 이 방식으로 만들었어요. 금융/투자 도메인에서 <b>0 → 1</b>을, 요청 한 번에 <b>기능 추가 → 브라우저 검증 → 커밋</b>으로 돌립니다.
+        </div>
       </Card>
     </section>
   )
